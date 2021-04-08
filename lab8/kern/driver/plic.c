@@ -31,7 +31,9 @@ void plic_init(void)
     int i = 0;
 
     /* Get current core id */
-    unsigned long core_id = 0;//current_coreid();
+    //asm volatile ("csrr t0, mhartid");
+    //cprintf("testing\n");
+    unsigned long core_id =0;//read_csr(mhartid); //current_coreid();
     /* Disable all interrupts for the current core. */
     cprintf("plic got coreid %d\n", core_id);
     for (i = 0; i < ((PLIC_NUM_SOURCES + 32u) / 32u); i++)
@@ -59,7 +61,7 @@ void plic_init(void)
         };
         /* clang-format on */
     }
-
+    cprintf("Cleared PLIC instance for every core\n");
     /*
      * A successful claim will also atomically clear the corresponding
      * pending bit on the interrupt source. A target can perform a claim
@@ -71,7 +73,7 @@ void plic_init(void)
         /* This loop will clear pending bit on the interrupt source */
         i++;
     }
-
+    cprintf("clear finished\n");
     /* Enable machine external interrupts. */
     set_csr(mie, MIP_MEIP);
 }

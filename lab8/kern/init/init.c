@@ -42,7 +42,7 @@ kern_init(void) {
     pic_init();                 // init interrupt controller
     idt_init();                 // init interrupt descriptor table
     dmac_init();
-    //plic_init();
+    plic_init();
 
     vmm_init();                 // init virtual memory management
     sched_init();
