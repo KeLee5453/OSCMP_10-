@@ -7,6 +7,7 @@
 
 #include <defs.h>
 #include <io.h>
+#include <riscv.h>
 
 #define SYSCTL_CLOCK_FREQ_IN    (26000000UL)
 
@@ -936,5 +937,16 @@ uint32_t sysctl_pll_get_freq(sysctl_pll_t pll);
  * @return      The clock frequency
  */
 uint32_t sysctl_clock_get_freq(sysctl_clock_t clock);
+
+/**
+ * @brief       Enable interrupt
+ */
+void sysctl_enable_irq(void);
+
+/**
+ * @brief       Disable interrupt
+ */
+void sysctl_disable_irq(void);
+
 
 #endif //LAB8_SYSCTL_H

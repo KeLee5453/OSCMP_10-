@@ -11,6 +11,8 @@
 
 #define CHAR_BIT        8
 
+#define false           0
+#define true            1
 /* Represents true-or-false values */
 typedef long long bool;
 

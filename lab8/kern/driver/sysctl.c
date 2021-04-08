@@ -969,3 +969,15 @@ uint32_t sysctl_clock_get_freq(sysctl_clock_t clock)
     }
     return result;
 }
+
+void sysctl_enable_irq(void)
+{
+    set_csr(mie, MIP_MEIP);
+    set_csr(mstatus, MSTATUS_MIE);
+}
+
+void sysctl_disable_irq(void)
+{
+    clear_csr(mie, MIP_MEIP);
+    clear_csr(mstatus, MSTATUS_MIE);
+}
