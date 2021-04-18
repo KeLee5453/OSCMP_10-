@@ -24,8 +24,7 @@
 #include "utils.h"
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #define INCBIN_PREFIX
-#include <float.h>
-
+// #include <float.h>
 #include "incbin.h"
 #include "iomem.h"
 #include "pic.h"
@@ -52,9 +51,9 @@ volatile uint8_t g_ai_done_flag = 0;
 
 static void ai_done(void *ctx) { g_ai_done_flag = 1; }
 
-uint32_t *g_lcd_gram0 __attribute__((aligned(64))) = rgb_image_cowrg;
-uint32_t *g_lcd_gram1 __attribute__((aligned(64))) = rgb_image_cowrg;
-uint8_t *g_ai_buf __attribute__((aligned(128))) = rgb_image_cow;
+uint32_t *g_lcd_gram0 __attribute__((aligned(64))) = rgb_image;  //显示图片
+uint32_t *g_lcd_gram1 __attribute__((aligned(64))) = rgb_image;  //显示图片
+uint8_t *g_ai_buf __attribute__((aligned(128))) = ai_image_peaple;  //读取图片
 
 #define ANCHOR_NUM 5
 
@@ -80,7 +79,7 @@ volatile uint8_t g_ram_mux = 0;
 //   return 0;
 // }
 
-#if BOARD_LICHEEDAN
+// #if BOARD_LICHEEDAN
 //初始化设备，使用宏定义区分board，详情修改 board_config.h
 static void io_mux_init(void) {
   /* Init DVP IO map and function settings */
@@ -108,32 +107,32 @@ static void io_set_power(void) {
   sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
 }
 
-#else
-static void io_mux_init(void) {
-  /* Init DVP IO map and function settings */
-  fpioa_set_function(11, FUNC_CMOS_RST);
-  fpioa_set_function(13, FUNC_CMOS_PWDN);
-  fpioa_set_function(14, FUNC_CMOS_XCLK);
-  fpioa_set_function(12, FUNC_CMOS_VSYNC);
-  fpioa_set_function(17, FUNC_CMOS_HREF);
-  fpioa_set_function(15, FUNC_CMOS_PCLK);
-  fpioa_set_function(10, FUNC_SCCB_SCLK);
-  fpioa_set_function(9, FUNC_SCCB_SDA);
+// #else
+// static void io_mux_init(void) {
+//   /* Init DVP IO map and function settings */
+//   fpioa_set_function(11, FUNC_CMOS_RST);
+//   fpioa_set_function(13, FUNC_CMOS_PWDN);
+//   fpioa_set_function(14, FUNC_CMOS_XCLK);
+//   fpioa_set_function(12, FUNC_CMOS_VSYNC);
+//   fpioa_set_function(17, FUNC_CMOS_HREF);
+//   fpioa_set_function(15, FUNC_CMOS_PCLK);
+//   fpioa_set_function(10, FUNC_SCCB_SCLK);
+//   fpioa_set_function(9, FUNC_SCCB_SDA);
 
-  /* Init SPI IO map and function settings */
-  fpioa_set_function(8, FUNC_GPIOHS0 + DCX_GPIONUM);
-  fpioa_set_function(6, FUNC_SPI0_SS3);
-  fpioa_set_function(7, FUNC_SPI0_SCLK);
+//   /* Init SPI IO map and function settings */
+//   fpioa_set_function(8, FUNC_GPIOHS0 + DCX_GPIONUM);
+//   fpioa_set_function(6, FUNC_SPI0_SS3);
+//   fpioa_set_function(7, FUNC_SPI0_SCLK);
 
-  sysctl_set_spi0_dvp_data(1);
-}
+//   sysctl_set_spi0_dvp_data(1);
+// }
 
-static void io_set_power(void) {
-  /* Set dvp and spi pin to 1.8V */
-  sysctl_set_power_mode(SYSCTL_POWER_BANK1, SYSCTL_POWER_V18);
-  sysctl_set_power_mode(SYSCTL_POWER_BANK2, SYSCTL_POWER_V18);
-}
-#endif
+// static void io_set_power(void) {
+//   /* Set dvp and spi pin to 1.8V */
+//   sysctl_set_power_mode(SYSCTL_POWER_BANK1, SYSCTL_POWER_V18);
+//   sysctl_set_power_mode(SYSCTL_POWER_BANK2, SYSCTL_POWER_V18);
+// }
+// #endif
 
 #if (CLASS_NUMBER > 1)
 typedef struct {
@@ -142,7 +141,7 @@ typedef struct {
   uint16_t height;
   uint16_t width;
   uint32_t *ptr;
-} class_lable_t;
+} class_lable_t;  //类的结构
 //可以识别哪些类
 class_lable_t class_lable[CLASS_NUMBER] = {
     {"aeroplane", GREEN},   {"bicycle", GREEN},     {"bird", GREEN},
@@ -204,7 +203,7 @@ int main(void) {
 
   io_mux_init();   //初始化DVP输入输出映射和功能设置
   io_set_power();  //初始化DVP POWER
-  // plic_init();     //初始化为外部中断
+  plic_init();     //初始化为外部中断
 
   /* flash init */
   printf("flash init\n");
@@ -223,10 +222,12 @@ int main(void) {
 #endif
 
   lable_init();
+  //初始化标签
 
   /* LCD init */
   printf("LCD init\n");
   lcd_init();
+  //初始化显示屏
 #if BOARD_LICHEEDAN
   //设置LCD显示方向
   lcd_set_direction(DIR_YX_RLDU);

@@ -1,6 +1,0 @@
-/home/kelee/Desktop/k210-example/build/CMakeFiles/rebuild_cache.dir
-/home/kelee/Desktop/k210-example/build/CMakeFiles/face-detect.dir
-/home/kelee/Desktop/k210-example/build/CMakeFiles/edit_cache.dir
-/home/kelee/Desktop/k210-example/build/kendryte_standalone-sdk/CMakeFiles/rebuild_cache.dir
-/home/kelee/Desktop/k210-example/build/kendryte_standalone-sdk/CMakeFiles/kendryte_standalone-sdk.dir
-/home/kelee/Desktop/k210-example/build/kendryte_standalone-sdk/CMakeFiles/edit_cache.dir
