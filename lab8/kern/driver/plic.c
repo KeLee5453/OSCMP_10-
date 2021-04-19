@@ -1,0 +1,4 @@
+void plic_init()
+{
+    ;
+}

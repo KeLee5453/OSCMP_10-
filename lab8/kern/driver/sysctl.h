@@ -8,7 +8,7 @@
 #include <defs.h>
 #include <io.h>
 
-#define SYSCTL_CLOCK_FREQ_IN    (26000000UL)
+#define SYSCTL_CLOCK_FREQ_IN (26000000UL)
 
 typedef enum _sysctl_pll_t
 {
@@ -604,7 +604,7 @@ typedef struct _sysctl_misc
 {
     uint32_t debug_sel : 6;
     uint32_t reserved0 : 4;
-    uint32_t spi_dvp_data_enable: 1;
+    uint32_t spi_dvp_data_enable : 1;
     uint32_t reserved1 : 21;
 } __attribute__((packed, aligned(4))) sysctl_misc_t;
 
@@ -936,5 +936,17 @@ uint32_t sysctl_pll_get_freq(sysctl_pll_t pll);
  * @return      The clock frequency
  */
 uint32_t sysctl_clock_get_freq(sysctl_clock_t clock);
+
+/**
+ * @brief       Set io power mode
+ *
+ * @param[in]   power_bank          IO power bank
+ * @param[in]   io_power_mode       Set power mode 3.3v or 1.8
+ *
+ * @return      Result
+ *     - 0      Success
+ *     - Other  Fail
+ */
+void sysctl_set_power_mode(sysctl_power_bank_t power_bank, sysctl_io_power_mode_t io_power_mode);
 
 #endif //LAB8_SYSCTL_H
