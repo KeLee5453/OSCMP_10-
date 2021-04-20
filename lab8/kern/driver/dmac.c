@@ -255,8 +255,8 @@ void dmac_enable_common_interrupt_signal(void)
 
 static void dmac_enable_channel_interrupt(dmac_channel_number_t channel_num)
 {
-    writeq(0xffffffff, &dmac->channel[channel_num].intclear);
-    writeq(0x2, &dmac->channel[channel_num].intstatus_en);
+    writeq(0xffffffff, &dmac->channel[channel_num].intclear);//Interrupt Clear Register
+    writeq(0x2, &dmac->channel[channel_num].intstatus_en);//Interrupt Status Enable Register 
 }
 
 void dmac_disable_channel_interrupt(dmac_channel_number_t channel_num)
@@ -781,7 +781,7 @@ void dmac_irq_register(dmac_channel_number_t channel_num , plic_irq_callback_t d
     dmac_context[channel_num].dmac_channel = channel_num;
     dmac_context[channel_num].callback = dmac_callback;
     dmac_context[channel_num].ctx = ctx;
-    dmac_enable_channel_interrupt(channel_num);
+    dmac_enable_channel_interrupt(channel_num);//dmac的第channel_num通道中断使能
     plic_set_priority(IRQN_DMA0_INTERRUPT + channel_num, priority);
     plic_irq_register(IRQN_DMA0_INTERRUPT + channel_num, dmac_irq_callback, &dmac_context[channel_num]);
     plic_irq_enable(IRQN_DMA0_INTERRUPT + channel_num);

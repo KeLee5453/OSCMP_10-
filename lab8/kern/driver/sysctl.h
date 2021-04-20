@@ -125,7 +125,7 @@ typedef enum _sysctl_clock_t
     SYSCTL_CLOCK_HCLK,
     SYSCTL_CLOCK_IN0,
     SYSCTL_CLOCK_MAX
-} sysctl_clock_t;
+} sysctl_clock_t;//时钟中断号
 
 /**
  * @brief      System controller clock select id

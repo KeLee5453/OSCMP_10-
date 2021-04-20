@@ -235,9 +235,9 @@ static int sysctl_clock_device_end_en(sysctl_clock_t clock, int en)
 
 int sysctl_clock_enable(sysctl_clock_t clock)
 {
-    if (clock >= SYSCTL_CLOCK_MAX)
+    if (clock >= SYSCTL_CLOCK_MAX)//SYSCTL_CLOCK_MAX为最大的时钟中断号
         return -1;
-    sysctl_clock_bus_end_en(clock,1);
+    sysctl_clock_bus_end_en(clock,1);//设置APB clock，使能外围设备对应的central clock
     sysctl_clock_device_end_en(clock,1);
     return 0;
 }

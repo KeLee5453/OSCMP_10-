@@ -44,9 +44,9 @@ typedef struct
         uint64_t reg;
         struct
         {
-            uint64_t image_src_addr:15;
+            uint64_t image_src_addr:15;//图像加载地址
             uint64_t reserved0:17;
-            uint64_t image_dst_addr:15;
+            uint64_t image_dst_addr:15;//图像输出地址
             uint64_t reserved1:17;
         } data;
     } image_addr;
@@ -63,7 +63,7 @@ typedef struct
             uint64_t o_ch_num_coef:10;
             uint64_t reserved2:6;
         } data;
-    } image_channel_num;
+    } image_channel_num;//通道数寄存器
 
     union
     {
@@ -77,7 +77,7 @@ typedef struct
             uint64_t o_col_high:9;
             uint64_t reserved1:13;
         } data;
-    } image_size;
+    } image_size;//图像大小
 
     union
     {
@@ -95,7 +95,7 @@ typedef struct
             uint64_t pad_value:8;
             uint64_t bwsx_base_addr:32;
         } data;
-    } kernel_pool_type_cfg;
+    } kernel_pool_type_cfg;//池化层
 
     union
     {
@@ -126,15 +126,15 @@ typedef struct
         uint64_t reg;
         struct
         {
-            uint64_t channel_switch_addr:15;
+            uint64_t channel_switch_addr:15;//一个图片有三个通道，单通道占用的单元数，为row_switch_addr*height
             uint64_t reserved:1;
-            uint64_t row_switch_addr:4;
+            uint64_t row_switch_addr:4;//图片一行占用的单元数，一个单元64byte
             uint64_t coef_size:8;
             uint64_t coef_group:3;
             uint64_t load_act:1;
             uint64_t active_addr:32;
         } data;
-    } kernel_calc_type_cfg;
+    } kernel_calc_type_cfg;//卷积层
 
     union
     {

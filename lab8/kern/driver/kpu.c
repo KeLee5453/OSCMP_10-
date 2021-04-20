@@ -134,11 +134,12 @@ static int kpu_run_dma_input_done_push_layers(void* _task)
     kpu_continue(task);
     return 0;
 }
-static void kpu_run_dma_input(uint32_t dma_ch, const void* src, plic_irq_callback_t cb, void* _task)
+static void kpu_run_dma_input(uint32_t dma_ch, const void* src, plic_irq_callback_t cb, void* _task)//设置dma寄存器和模式
 {
     kpu_task_t* task = _task;
     kpu_layer_argument_t* first_layer = &task->layers[0];
-    uint64_t input_size = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num+1);
+    uint64_t input_size = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num+1);//输入图像的字节数
+    //dmac中断有关
     dmac_irq_register(dma_ch, cb, _task, 1);
     dmac_set_single_mode(dma_ch, (void *)src, (void *)(AI_IO_BASE_ADDR), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
         DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
@@ -148,27 +149,28 @@ int kpu_run(kpu_task_t* v_task, dmac_channel_number_t dma_ch, const void *src, v
 {
     if(atomic_cas(&g_kpu_context.kpu_status, 0, 1))
         return -1;
-
-    memcpy((void *)&g_kpu_context.kpu_task, v_task, sizeof(kpu_task_t));
+    //g_kpu_context 为kpu上下文结构体，包含任务句柄和kpu状态
+    memcpy((void *)&g_kpu_context.kpu_task, v_task, sizeof(kpu_task_t));//设置上下文的任务句柄
     kpu_task_t *task = (kpu_task_t *)&g_kpu_context.kpu_task;
 
     kpu_layer_argument_t* last_layer = &task->layers[task->layers_length-1];
 
-    uint64_t output_size = last_layer->dma_parameter.data.dma_total_byte+1;
+    uint64_t output_size = last_layer->dma_parameter.data.dma_total_byte+1;//dma_total_byte为输出大小
 
     last_layer->dma_parameter.data.send_data_out = 1;
     last_layer->interrupt_enabe.data.int_en = 1;
 
-    task->dma_ch = dma_ch;
+    task->dma_ch = dma_ch;//dma通道
     task->dst = dest;
-    task->dst_length = output_size;
+    task->dst_length = output_size;//输出字节数
     task->callback = callback;
-    task->remain_layers_length = task->layers_length;
-    task->remain_layers = task->layers;
+    //remain_layers等同于layers？
+    task->remain_layers_length = task->layers_length;//模型的层数
+    task->remain_layers = task->layers;//模型的层
 
-    plic_set_priority(IRQN_AI_INTERRUPT, 1);
-    plic_irq_register(IRQN_AI_INTERRUPT, kpu_continue, task);
-    plic_irq_enable(IRQN_AI_INTERRUPT);
+    plic_set_priority(IRQN_AI_INTERRUPT, 1);//设置外部中断优先级
+    plic_irq_register(IRQN_AI_INTERRUPT, kpu_continue, task);//设置IRON_AI_INTERUPT中断的callback函数为 kpu_continue,上下文为task
+    plic_irq_enable(IRQN_AI_INTERRUPT);//使能外部中断
 
     kpu_run_dma_input(dma_ch, src, kpu_run_dma_input_done_push_layers, task);
 
@@ -293,16 +295,16 @@ static void kpu_data_input(kpu_task_t *task)
 
 int kpu_single_task_init(kpu_task_t *task)
 {
-    sysctl_clock_enable(SYSCTL_CLOCK_AI);
-    kpu_layer_argument_t *first_layer = &task->layers[0];
-    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];
+    sysctl_clock_enable(SYSCTL_CLOCK_AI);   //使能clk_en_peri.ai_clk_en
+    kpu_layer_argument_t *first_layer = &task->layers[0];//任务句柄的第一层
+    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];//和最后一层
 
     last_layer->dma_parameter.data.send_data_out = 1;
-    last_layer->interrupt_enabe.data.int_en = 1;
+    last_layer->interrupt_enabe.data.int_en = 1;//设置一些参数
     task->src_length = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num + 1) / 8;
     task->dst_length = ((last_layer->dma_parameter.data.dma_total_byte + 1) + 7) / 8;
-    task->dst = (uint64_t *)malloc(task->dst_length * 8);
-    memset(task->dst, 0, task->dst_length * 8);
+    task->dst = (uint64_t *)malloc(task->dst_length * 8);//dst_length单位为8字节
+    memset(task->dst, 0, task->dst_length * 8);//将task目标地址初始化为0
     if (task->dst == NULL)
         return 1;
     return 0;
