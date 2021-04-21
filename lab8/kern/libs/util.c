@@ -15,12 +15,12 @@ void set_bits_value_offset(volatile uint32_t *bits, uint32_t mask, uint32_t valu
     set_bits_value(bits, mask << offset, value << offset);
 }
 
-void set_bit(volatile uint32_t *bits, uint32_t offset)
+void set_bit_p(volatile uint32_t *bits, uint32_t offset)
 {
     set_bits_value(bits, 1 << offset, 1 << offset);
 }
 
-void clear_bit(volatile uint32_t *bits, uint32_t offset)
+void clear_bit_p(volatile uint32_t *bits, uint32_t offset)
 {
     set_bits_value(bits, 1 << offset, 0);
 }

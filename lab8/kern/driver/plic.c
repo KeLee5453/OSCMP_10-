@@ -22,7 +22,7 @@
 #include "stdio.h"
 //#include "syslog.h"
 
-volatile plic_t* const plic = (volatile plic_t*)PLIC_BASE_ADDR;
+volatile plic_t *const plic = (volatile plic_t *)PLIC_BASE_ADDR;
 
 static plic_instance_t plic_instance[PLIC_NUM_CORES][IRQN_MAX];
 
@@ -33,7 +33,7 @@ void plic_init(void)
     /* Get current core id */
     //asm volatile ("csrr t0, mhartid");
     //cprintf("testing\n");
-    unsigned long core_id =0;//read_csr(mhartid); //current_coreid();
+    unsigned long core_id = 0; //read_csr(mhartid); //current_coreid();
     /* Disable all interrupts for the current core. */
     cprintf("plic got coreid %d\n", core_id);
     for (i = 0; i < ((PLIC_NUM_SOURCES + 32u) / 32u); i++)
@@ -41,7 +41,7 @@ void plic_init(void)
     cprintf("plic cleared\n");
     static uint8_t s_plic_priorities_init_flag = 0;
     /* Set priorities to zero. */
-    if(s_plic_priorities_init_flag == 0)
+    if (s_plic_priorities_init_flag == 0)
     {
         for (i = 0; i < PLIC_NUM_SOURCES; i++)
             plic->source_priorities.priority[i] = 0;
@@ -75,7 +75,7 @@ void plic_init(void)
     }
     cprintf("clear finished\n");
     /* Enable machine external interrupts. */
-    set_csr(mie, MIP_MEIP);
+    set_csr(sie, MIP_SEIP);
 }
 
 int plic_irq_enable(plic_irq_t irq_number)
@@ -167,7 +167,7 @@ plic_instance_t (*plic_get_instance(void))[IRQN_MAX]
 
 /*Entry Point for PLIC Interrupt Handler*/
 uintptr_t __attribute__((weak))
-handle_irq_m_ext(uintptr_t cause, uintptr_t epc ,struct pushregs regs)
+handle_irq_m_ext(uintptr_t cause, uintptr_t epc, struct pushregs regs)
 {
     /*
      * After the highest-priority pending interrupt is claimed by a target

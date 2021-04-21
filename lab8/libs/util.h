@@ -9,7 +9,7 @@
 
 void set_bits_value(volatile uint32_t *bits, uint32_t mask, uint32_t value);
 void set_bits_value_offset(volatile uint32_t *bits, uint32_t mask, uint32_t value, uint32_t offset);
-void set_bit(volatile uint32_t *bits, uint32_t offset);
-void clear_bit(volatile uint32_t *bits, uint32_t offset);
+void set_bit_p(volatile uint32_t *bits, uint32_t offset);
+void clear_bit_p(volatile uint32_t *bits, uint32_t offset);
 
 #endif //LAB8_UTIL_H
