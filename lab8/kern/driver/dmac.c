@@ -809,16 +809,16 @@ void dmac_intr(dmac_channel_number_t channel_num)
 //     return 0;
 // }
 
-// void dmac_irq_register(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority)
-// {
-//     dmac_context[channel_num].dmac_channel = channel_num;
-//     dmac_context[channel_num].callback = dmac_callback;
-//     dmac_context[channel_num].ctx = ctx;
-//     dmac_enable_channel_interrupt(channel_num); //dmac的第channel_num通道中断使能
-//     plic_set_priority(IRQN_DMA0_INTERRUPT + channel_num, priority);
-//     plic_irq_register(IRQN_DMA0_INTERRUPT + channel_num, dmac_irq_callback, &dmac_context[channel_num]);
-//     plic_irq_enable(IRQN_DMA0_INTERRUPT + channel_num);
-// }
+void dmac_irq_register(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority)
+{
+    dmac_context[channel_num].dmac_channel = channel_num;
+    dmac_context[channel_num].callback = dmac_callback;
+    dmac_context[channel_num].ctx = ctx;
+    dmac_enable_channel_interrupt(channel_num); //dmac的第channel_num通道中断使能
+    plic_set_priority(IRQN_DMA0_INTERRUPT + channel_num, priority);
+    plic_irq_register(IRQN_DMA0_INTERRUPT + channel_num, dmac_callback, &dmac_context[channel_num]);
+    plic_irq_enable(IRQN_DMA0_INTERRUPT + channel_num);
+}
 
 void __attribute__((weak, alias("dmac_irq_register"))) dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
 

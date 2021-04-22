@@ -2,7 +2,8 @@
 // Created by lumin on 2020/11/2.
 //
 #include <sysctl.h>
-
+#include <defs.h>
+#include <stdio.h>
 const uint8_t source_select_pll2[] =
     {
         [0] = SYSCTL_CLOCK_SOURCE_IN0,
@@ -1026,4 +1027,11 @@ int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select)
     sysctl->dma_sel1 = dma_sel1;
 
     return 0;
+}
+
+uint64_t sysctl_get_time_us(void)
+{
+    uint64_t v_cycle = rdcycle();
+    cprintf("got time\n");
+    return v_cycle * 1000000 / sysctl_clock_get_freq(SYSCTL_CLOCK_CPU);
 }

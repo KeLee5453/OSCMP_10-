@@ -960,4 +960,11 @@ void sysctl_disable_irq(void);
  */
 int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select);
 
+/**
+ * @brief       Get the time start up to now
+ *
+ * @return      The time of microsecond
+ */
+uint64_t sysctl_get_time_us(void);
+
 #endif //LAB8_SYSCTL_H

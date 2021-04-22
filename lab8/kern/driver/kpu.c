@@ -180,7 +180,7 @@ uint8_t *kpu_get_output_buf(kpu_task_t *task)
 void kpu_release_output_buf(uint8_t *output_buf)
 {
     if (output_buf != NULL)
-        free(output_buf);
+        kfree(output_buf);
 }
 
 static int kpu_done(void *ctx)
@@ -302,7 +302,7 @@ int kpu_single_task_init(kpu_task_t *task)
 
 int kpu_single_task_deinit(kpu_task_t *task)
 {
-    free(task->dst);
+    kfree(task->dst);
     return 0;
 }
 
@@ -1384,9 +1384,9 @@ int kpu_get_output(kpu_model_context_t *ctx, uint32_t index, uint8_t **data, siz
     return 0;
 }
 
-void kpu_model_free(kpu_model_context_t *ctx)
+void kpu_model_kfree(kpu_model_context_t *ctx)
 {
-    free(ctx->main_buffer);
+    kfree(ctx->main_buffer);
     ctx->main_buffer = NULL;
 }
 

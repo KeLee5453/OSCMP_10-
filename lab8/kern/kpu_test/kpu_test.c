@@ -9,8 +9,10 @@
 #include "plic.h"
 #include "region_layer.h"
 #include "sysctl.h"
-
+#include <kmalloc.h>
 #include "util.h"
+#include "picojpeg.h"
+#include "picojpeg_util.h"
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #define INCBIN_PREFIX
 #include "incbin.h"
@@ -23,9 +25,11 @@ static region_layer_t detect_rl;
 volatile uint8_t g_ai_done_flag = 0;
 static void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
 
-uint32_t *g_lcd_gram0 __attribute__((aligned(64))); //显示图片
-uint32_t *g_lcd_gram1 __attribute__((aligned(64))); //显示图片
-uint8_t *g_ai_buf __attribute__((aligned(128)));    //读取图片
+uint32_t *g_lcd_gram0; //显示图片
+uint32_t *g_lcd_gram1; //显示图片
+uint8_t *g_ai_buf;     //读取图片
+// g_ai_buf = (uint8_t *)kmalloc(230400);
+extern unsigned char jpeg_data[11485];
 
 #define ANCHOR_NUM 5
 #define BLACK 0x0000
@@ -55,7 +59,6 @@ int kpu_test(void)
     // io_set_power();
     plic_init();
 
-    cprintf("g_ai_buf:  %x\n", g_ai_buf);
     cprintf("kpu system start\n");
 
     uint8_t *model_data_align = model_data;
@@ -73,11 +76,25 @@ int kpu_test(void)
     detect_rl.threshold = 0.7;
     detect_rl.nms_value = 0.3;
     region_layer_init(&detect_rl, 10, 7, 125, 320, 240);
+
+    // decode jpeg
+    cprintf("decoding jpg...\n");
+    // uint64_t tm = sysctl_get_time_us();
+
+    jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, sizeof(jpeg_data));
+    // cprintf("decoede use :%ld us\r\n", sysctl_get_time_us() - tm);
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        /* code */ cprintf("jped->data:%d   \n", (*(jpeg->img_data + i)));
+    }
+    g_ai_buf = jpeg_data;
+    cprintf("g_ai_buf addr:  %x\n", g_ai_buf);
     cprintf("kpu is running kmodel\n");
     for (uint8_t i = 0; i < 10; i++)
     {
         /* code */ cprintf("g_ai_buf:%d\n", (*(g_ai_buf + i)));
     }
+
     kpu_run_kmodel(&task, g_ai_buf, DMAC_CHANNEL5, ai_done, NULL);
     while (!g_ai_done_flag)
         ;
