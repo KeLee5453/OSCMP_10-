@@ -51,8 +51,8 @@ static void print_class(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2,
 
 int kpu_test(void)
 {
-    io_mux_init();
-    io_set_power();
+    // io_mux_init();
+    // io_set_power();
     plic_init();
 
     cprintf("g_ai_buf:  %x\n", g_ai_buf);

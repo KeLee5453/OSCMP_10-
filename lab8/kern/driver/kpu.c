@@ -2,7 +2,7 @@
 #include "io.h"
 #include <sysctl.h>
 #include <stdio.h>
-#include <math.h>
+
 #include "stdio.h"
 #include "defs.h"
 #include "dmac.h"
@@ -11,6 +11,8 @@
 #include <assert.h>
 #include "float.h"
 #include <stdlib.h>
+#include "math.h"
+#include <kmalloc.h>
 #define LAYER_BURST_SIZE 12
 
 #define KPU_DEBUG 0
@@ -1359,7 +1361,7 @@ int kpu_load_kmodel(kpu_model_context_t *ctx, const uint8_t *buffer)
         ctx->layer_headers = (const kpu_model_layer_header_t *)((uintptr_t)ctx->outputs + sizeof(kpu_model_output_t) * ctx->output_count);
         ctx->layers_length = header->layers_length;
         ctx->body_start = (const uint8_t *)((uintptr_t)ctx->layer_headers + sizeof(kpu_model_layer_header_t) * header->layers_length);
-        ctx->main_buffer = (uint8_t *)malloc(header->main_mem_usage);
+        ctx->main_buffer = (uint8_t *)kmalloc(header->main_mem_usage);
         if (!ctx->main_buffer)
             return -1;
     }

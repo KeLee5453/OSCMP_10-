@@ -9,7 +9,7 @@
 #include <io.h>
 #include <riscv.h>
 
-#define SYSCTL_CLOCK_FREQ_IN    (26000000UL)
+#define SYSCTL_CLOCK_FREQ_IN (26000000UL)
 
 typedef enum _sysctl_pll_t
 {
@@ -125,7 +125,7 @@ typedef enum _sysctl_clock_t
     SYSCTL_CLOCK_HCLK,
     SYSCTL_CLOCK_IN0,
     SYSCTL_CLOCK_MAX
-} sysctl_clock_t;//时钟中断号
+} sysctl_clock_t; //时钟中断号
 
 /**
  * @brief      System controller clock select id
@@ -605,7 +605,7 @@ typedef struct _sysctl_misc
 {
     uint32_t debug_sel : 6;
     uint32_t reserved0 : 4;
-    uint32_t spi_dvp_data_enable: 1;
+    uint32_t spi_dvp_data_enable : 1;
     uint32_t reserved1 : 21;
 } __attribute__((packed, aligned(4))) sysctl_misc_t;
 
@@ -948,5 +948,16 @@ void sysctl_enable_irq(void);
  */
 void sysctl_disable_irq(void);
 
+/**
+ * @brief       Select DMA channel handshake peripheral signal
+ *
+ * @param[in]   channel     The DMA channel
+ * @param[in]   select      The peripheral select
+ *
+ * @return      Result
+ *     - 0      Success
+ *     - Other  Fail
+ */
+int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select);
 
 #endif //LAB8_SYSCTL_H

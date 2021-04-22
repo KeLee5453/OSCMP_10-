@@ -820,7 +820,7 @@ void dmac_intr(dmac_channel_number_t channel_num)
 //     plic_irq_enable(IRQN_DMA0_INTERRUPT + channel_num);
 // }
 
-// void __attribute__((weak, alias("dmac_irq_register"))) dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
+void __attribute__((weak, alias("dmac_irq_register"))) dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
 
 // void dmac_irq_unregister(dmac_channel_number_t channel_num)
 // {
