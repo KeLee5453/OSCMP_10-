@@ -7,7 +7,6 @@
 
 #include "kpu.h"
 #include "plic.h"
-#include "region_layer.h"
 #include "sysctl.h"
 #include <kmalloc.h>
 #include "util.h"
@@ -15,25 +14,18 @@
 #include "picojpeg_util.h"
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #define INCBIN_PREFIX
-#include "incbin.h"
+#include "region_layer.h"
+#include "cnn.h"
 
 #define CLASS_NUMBER 20
-INCBIN(model, "../kpu_test/yolo.kmodel");
-
-kpu_model_context_t task;
-static region_layer_t detect_rl;
+cnn_task_t task;
+uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
 volatile uint8_t g_ai_done_flag = 0;
 static void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
 
-uint32_t *g_lcd_gram0; //显示图片
-uint32_t *g_lcd_gram1; //显示图片
-uint8_t *g_ai_buf;     //读取图片
-// g_ai_buf = (uint8_t *)kmalloc(230400);
-extern unsigned char jpeg_data[11485];
+uint8_t g_ai_buf[320 * 240 * 3] __attribute__((aligned(128)));
 
-#define ANCHOR_NUM 5
-#define BLACK 0x0000
-float g_anchor[ANCHOR_NUM * 2] = {1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52};
+extern unsigned char jpeg_data[11485];
 
 #if (CLASS_NUMBER > 1)
 typedef struct
@@ -55,69 +47,34 @@ static void print_class(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2,
 
 int kpu_test(void)
 {
-    // io_mux_init();
-    // io_set_power();
-    plic_init();
-
-    cprintf("kpu system start\n");
-
-    uint8_t *model_data_align = model_data;
-    if (kpu_load_kmodel(&task, model_data_align) != 0)
-    {
-        cprintf("\nmodel init error\n");
-        while (1)
-        {
-            cprintf("kmodel is loading...\n");
-        };
-    }
-    cprintf("kmodel  loaded...\n");
-    detect_rl.anchor_number = ANCHOR_NUM;
-    detect_rl.anchor = g_anchor;
-    detect_rl.threshold = 0.7;
-    detect_rl.nms_value = 0.3;
-    region_layer_init(&detect_rl, 10, 7, 125, 320, 240);
-
+    sysctl_clock_enable(SYSCTL_CLOCK_AI);
+    cprintf("set clock succeed\n");
+    /*---------------加载图片到ai_buf-----------------*/
     // decode jpeg
     cprintf("decoding jpg...\n");
-    // uint64_t tm = sysctl_get_time_us();
-
     jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, sizeof(jpeg_data));
     // cprintf("decoede use :%ld us\r\n", sysctl_get_time_us() - tm);
     for (uint32_t i = 0; i < 10; i++)
     {
         /* code */ cprintf("jped->data:%d   \n", (*(jpeg->img_data + i)));
     }
-    g_ai_buf = jpeg_data;
-    cprintf("g_ai_buf addr:  %x\n", g_ai_buf);
-    cprintf("kpu is running kmodel\n");
-    for (uint8_t i = 0; i < 10; i++)
+    for (uint32_t i = 0; i < 230400; i++)
     {
-        /* code */ cprintf("g_ai_buf:%d\n", (*(g_ai_buf + i)));
+        g_ai_buf[i] = *(jpeg->img_data + i);
     }
+    cprintf("g_ai_buf addr:  %x\n", g_ai_buf);
+    /*---------------加载图片到ai_buf-----------------*/
 
-    kpu_run_kmodel(&task, g_ai_buf, DMAC_CHANNEL5, ai_done, NULL);
+    cnn_task_init(&task);
+
+    cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
+
     while (!g_ai_done_flag)
         ;
     g_ai_done_flag = 0;
-    cprintf("kpu has run kmodel\n");
-    float *output;
-    size_t output_size;
-    cprintf("kpu is getting output ...\n");
-    kpu_get_output(&task, 0, (uint8_t **)&output, &output_size);
-    for (size_t i = 0; i < 10; i++)
-    {
-        /* code */
-        cprintf("kpu has got output : %f\n", *(output + i));
-    }
-    detect_rl.input = output;
-    /* start region layer */
-    cprintf("region layer is running \n");
-    region_layer_run(&detect_rl, NULL);
-    cprintf("region layer has run \n");
 
-    cprintf("region layer is drawing box \n");
-    region_layer_draw_boxes(&detect_rl, print_class);
-    cprintf("region layer has drown box \n");
+    region_layer_cal((uint8_t *)image_dst);
+    region_layer_draw_boxes(print_class);
 
     return 0;
 }

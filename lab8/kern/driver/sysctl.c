@@ -973,17 +973,6 @@ uint32_t sysctl_clock_get_freq(sysctl_clock_t clock)
     return result;
 }
 
-void sysctl_enable_irq(void)
-{
-    set_csr(mie, MIP_MEIP);
-    set_csr(mstatus, MSTATUS_MIE);
-}
-
-void sysctl_disable_irq(void)
-{
-    clear_csr(mie, MIP_MEIP);
-    clear_csr(mstatus, MSTATUS_MIE);
-}
 int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select)
 {
     sysctl_dma_sel0_t dma_sel0;
@@ -1027,11 +1016,4 @@ int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select)
     sysctl->dma_sel1 = dma_sel1;
 
     return 0;
-}
-
-uint64_t sysctl_get_time_us(void)
-{
-    uint64_t v_cycle = rdcycle();
-    cprintf("got time\n");
-    return v_cycle * 1000000 / sysctl_clock_get_freq(SYSCTL_CLOCK_CPU);
 }

@@ -10,7 +10,47 @@
 #include <riscv.h>
 
 #define SYSCTL_CLOCK_FREQ_IN (26000000UL)
-
+/**
+ * @brief      System controller register
+ *
+ * @note       System controller register table
+ *
+ * | Offset    | Name           | Description                         |
+ * |-----------|----------------|-------------------------------------|
+ * | 0x00      | git_id         | Git short commit id                 |
+ * | 0x04      | clk_freq       | System clock base frequency         |
+ * | 0x08      | pll0           | PLL0 controller                     |
+ * | 0x0c      | pll1           | PLL1 controller                     |
+ * | 0x10      | pll2           | PLL2 controller                     |
+ * | 0x14      | resv5          | Reserved                            |
+ * | 0x18      | pll_lock       | PLL lock tester                     |
+ * | 0x1c      | rom_error      | AXI ROM detector                    |
+ * | 0x20      | clk_sel0       | Clock select controller0            |
+ * | 0x24      | clk_sel1       | Clock select controller1            |
+ * | 0x28      | clk_en_cent    | Central clock enable                |
+ * | 0x2c      | clk_en_peri    | Peripheral clock enable             |
+ * | 0x30      | soft_reset     | Soft reset ctrl                     |
+ * | 0x34      | peri_reset     | Peripheral reset controller         |
+ * | 0x38      | clk_th0        | Clock threshold controller 0        |
+ * | 0x3c      | clk_th1        | Clock threshold controller 1        |
+ * | 0x40      | clk_th2        | Clock threshold controller 2        |
+ * | 0x44      | clk_th3        | Clock threshold controller 3        |
+ * | 0x48      | clk_th4        | Clock threshold controller 4        |
+ * | 0x4c      | clk_th5        | Clock threshold controller 5        |
+ * | 0x50      | clk_th6        | Clock threshold controller 6        |
+ * | 0x54      | misc           | Miscellaneous controller            |
+ * | 0x58      | peri           | Peripheral controller               |
+ * | 0x5c      | spi_sleep      | SPI sleep controller                |
+ * | 0x60      | reset_status   | Reset source status                 |
+ * | 0x64      | dma_sel0       | DMA handshake selector              |
+ * | 0x68      | dma_sel1       | DMA handshake selector              |
+ * | 0x6c      | power_sel      | IO Power Mode Select controller     |
+ * | 0x70      | resv28         | Reserved                            |
+ * | 0x74      | resv29         | Reserved                            |
+ * | 0x78      | resv30         | Reserved                            |
+ * | 0x7c      | resv31         | Reserved                            |
+ *
+ */
 typedef enum _sysctl_pll_t
 {
     SYSCTL_PLL0,

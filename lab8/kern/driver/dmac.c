@@ -29,15 +29,6 @@ static wait_queue_t __wait_queue, *wait_queue =
                                       &__wait_queue;
 volatile dmac_t *const dmac = (dmac_t *)DMAC_BASE_ADDR;
 
-typedef struct _dmac_context
-{
-    dmac_channel_number_t dmac_channel;
-    plic_irq_callback_t callback;
-    void *ctx;
-} dmac_context_t;
-
-dmac_context_t dmac_context[6];
-
 static int is_memory(uintptr_t address)
 {
     enum
@@ -740,6 +731,7 @@ void dmac_set_single_mode(dmac_channel_number_t channel_num,
     dmac_set_channel_param(channel_num, src, dest, src_inc, dest_inc,
                            dmac_burst_size, dmac_trans_width, block_size);
     dmac_enable();
+    dmac_enable_channel_interrupt(channel_num);
     dmac_channel_enable(channel_num);
 }
 
@@ -808,19 +800,6 @@ void dmac_intr(dmac_channel_number_t channel_num)
 
 //     return 0;
 // }
-
-void dmac_irq_register(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority)
-{
-    dmac_context[channel_num].dmac_channel = channel_num;
-    dmac_context[channel_num].callback = dmac_callback;
-    dmac_context[channel_num].ctx = ctx;
-    dmac_enable_channel_interrupt(channel_num); //dmac的第channel_num通道中断使能
-    plic_set_priority(IRQN_DMA0_INTERRUPT + channel_num, priority);
-    plic_irq_register(IRQN_DMA0_INTERRUPT + channel_num, dmac_callback, &dmac_context[channel_num]);
-    plic_irq_enable(IRQN_DMA0_INTERRUPT + channel_num);
-}
-
-void __attribute__((weak, alias("dmac_irq_register"))) dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
 
 // void dmac_irq_unregister(dmac_channel_number_t channel_num)
 // {
