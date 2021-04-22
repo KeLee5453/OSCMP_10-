@@ -1600,9 +1600,14 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
     total_time = 0;
     kpu_time = 0;
 #endif
-
+    cprintf("in header \n");
     kpu_kmodel_header_t *header = (kpu_kmodel_header_t *)ctx->model_buffer;
-    kpu->interrupt_clear.reg = 7;
+    cprintf("in tmp \n");
+    // volatile uint64_t *tmp = (volatile uint64_t *)kpu->interrupt_clear.reg;
+    cprintf("out tmp \n");
+    cprintf("kpu->interrupt_clear.reg =  %x\n", kpu->interrupt_clear.reg);
+    // kpu->interrupt_clear.reg = 7;
+    cprintf(" kpu->interrupt_clear.reg = 7;\n");
     kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
         .fifo_full_threshold = 10, .fifo_empty_threshold = 1};
     kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t){
@@ -1611,7 +1616,7 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 0,
         .layer_cfg_almost_full_int = 1};
-
+    cprintf("plic_set_priority(IRQN_AI_INTERRUPT, 1);\n");
     plic_set_priority(IRQN_AI_INTERRUPT, 1);
     plic_irq_register(IRQN_AI_INTERRUPT, ai_step, ctx);
     plic_irq_enable(IRQN_AI_INTERRUPT);
@@ -1629,6 +1634,7 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
     }
     else
     {
+        cprintf(" kpu_input_dma\n");
         kpu_input_dma(&layer_arg, src, ctx->dma_ch, ai_step, ctx);
     }
 
