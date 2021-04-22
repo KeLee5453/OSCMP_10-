@@ -2,7 +2,7 @@
 #include "io.h"
 #include <sysctl.h>
 #include <stdio.h>
-#include "math.h"
+#include <math.h>
 #include "stdio.h"
 #include "defs.h"
 #include "dmac.h"
@@ -16,8 +16,8 @@
 #define KPU_DEBUG 0
 #define USE_CACHED_AI_RAM 0
 
-// #define min(a, b) (((a) < (b)) ? (a) : (b))
-// #define max(a, b) (((a) > (b)) ? (a) : (b))
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
 #define ALIGN_UP(x, align) ((x + (align - 1)) & (~(align - 1)))
 
 static int ai_step(void *userdata);
@@ -34,33 +34,31 @@ typedef struct kpu_context
 
 volatile kpu_context_t g_kpu_context;
 
-static int kpu_run_all_done(void* _task)
+static int kpu_run_all_done(void *_task)
 {
     atomic_swap(&g_kpu_context.kpu_status, 0);
-    kpu_task_t* task = (kpu_task_t*)_task;
+    kpu_task_t *task = (kpu_task_t *)_task;
     task->callback(task);
     return 0;
 }
 
-int kpu_continue(void* _task)
+int kpu_continue(void *_task)
 {
-    kpu_task_t* task = (kpu_task_t*)_task;
+    kpu_task_t *task = (kpu_task_t *)_task;
     int layer_burst_size = 1;
 
-    kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-    {
-        .calc_done_int=1,
-        .layer_cfg_almost_empty_int=1,
-        .layer_cfg_almost_full_int=1
-    };
+    kpu->interrupt_clear.data = (kpu_config_interrupt_t){
+        .calc_done_int = 1,
+        .layer_cfg_almost_empty_int = 1,
+        .layer_cfg_almost_full_int = 1};
 
-    if(task->remain_layers_length == 0)
+    if (task->remain_layers_length == 0)
     {
         return 0;
     }
-    if(task->remain_layers_length <= layer_burst_size)
+    if (task->remain_layers_length <= layer_burst_size)
     {
-        for(uint32_t i=0; i<task->remain_layers_length; i++)
+        for (uint32_t i = 0; i < task->remain_layers_length; i++)
         {
             kpu->layer_argument_fifo = task->remain_layers[i].interrupt_enabe.reg;
             kpu->layer_argument_fifo = task->remain_layers[i].image_addr.reg;
@@ -79,7 +77,7 @@ int kpu_continue(void* _task)
     }
     else
     {
-        for(uint32_t i=0; i<layer_burst_size; i++)
+        for (uint32_t i = 0; i < layer_burst_size; i++)
         {
             kpu->layer_argument_fifo = task->remain_layers[i].interrupt_enabe.reg;
             kpu->layer_argument_fifo = task->remain_layers[i].image_addr.reg;
@@ -99,93 +97,87 @@ int kpu_continue(void* _task)
     }
     return 0;
 }
-static int kpu_run_dma_output(uint32_t dma_ch, void* dst, uint32_t length, plic_irq_callback_t cb, void* _task)
+static int kpu_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, plic_irq_callback_t cb, void *_task)
 {
     sysctl_dma_select(dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
     dmac_irq_register(dma_ch, kpu_run_all_done, _task, 1);
     dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), (void *)(dst), DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-                         DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (length+7)/8);
+                         DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (length + 7) / 8);
     return 0;
 }
-static int kpu_run_dma_input_done_push_layers(void* _task)
+static int kpu_run_dma_input_done_push_layers(void *_task)
 {
-    kpu_task_t* task = (kpu_task_t*)_task;
+    kpu_task_t *task = (kpu_task_t *)_task;
     kpu->interrupt_clear.reg = 7;
     dmac->channel[task->dma_ch].intclear = 0xFFFFFFFF;
-    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t)
-    {
-        .fifo_full_threshold = 10, .fifo_empty_threshold=1
-    };
-    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t)
-    {
-        .eight_bit_mode=task->eight_bit_mode
-    };
+    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
+        .fifo_full_threshold = 10, .fifo_empty_threshold = 1};
+    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t){
+        .eight_bit_mode = task->eight_bit_mode};
 
-    kpu_layer_argument_t* last_layer = &task->layers[task->layers_length-1];
+    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];
 
-    kpu_run_dma_output(task->dma_ch, task->dst, last_layer->dma_parameter.data.dma_total_byte+1, kpu_run_all_done, task);
+    kpu_run_dma_output(task->dma_ch, task->dst, last_layer->dma_parameter.data.dma_total_byte + 1, kpu_run_all_done, task);
 
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
-        .calc_done_int=0,
-        .layer_cfg_almost_empty_int=0,
-        .layer_cfg_almost_full_int=1
-    };
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
+        .calc_done_int = 0,
+        .layer_cfg_almost_empty_int = 0,
+        .layer_cfg_almost_full_int = 1};
     kpu_continue(task);
     return 0;
 }
-static void kpu_run_dma_input(uint32_t dma_ch, const void* src, plic_irq_callback_t cb, void* _task)//设置dma寄存器和模式
+static void kpu_run_dma_input(uint32_t dma_ch, const void *src, plic_irq_callback_t cb, void *_task) //设置dma寄存器和模式
 {
-    kpu_task_t* task = _task;
-    kpu_layer_argument_t* first_layer = &task->layers[0];
-    uint64_t input_size = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num+1);//输入图像的字节数
+    kpu_task_t *task = _task;
+    kpu_layer_argument_t *first_layer = &task->layers[0];
+    uint64_t input_size = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num + 1); //输入图像的字节数
     //dmac中断有关
     dmac_irq_register(dma_ch, cb, _task, 1);
     dmac_set_single_mode(dma_ch, (void *)src, (void *)(AI_IO_BASE_ADDR), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
+                         DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
 }
 
-int kpu_run(kpu_task_t* v_task, dmac_channel_number_t dma_ch, const void *src, void* dest, plic_irq_callback_t callback)
+int kpu_run(kpu_task_t *v_task, dmac_channel_number_t dma_ch, const void *src, void *dest, plic_irq_callback_t callback)
 {
-    if(atomic_cas(&g_kpu_context.kpu_status, 0, 1))
+    if (atomic_cas(&g_kpu_context.kpu_status, 0, 1))
         return -1;
     //g_kpu_context 为kpu上下文结构体，包含任务句柄和kpu状态
-    memcpy((void *)&g_kpu_context.kpu_task, v_task, sizeof(kpu_task_t));//设置上下文的任务句柄
+    memcpy((void *)&g_kpu_context.kpu_task, v_task, sizeof(kpu_task_t)); //设置上下文的任务句柄
     kpu_task_t *task = (kpu_task_t *)&g_kpu_context.kpu_task;
 
-    kpu_layer_argument_t* last_layer = &task->layers[task->layers_length-1];
+    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];
 
-    uint64_t output_size = last_layer->dma_parameter.data.dma_total_byte+1;//dma_total_byte为输出大小
+    uint64_t output_size = last_layer->dma_parameter.data.dma_total_byte + 1; //dma_total_byte为输出大小
 
     last_layer->dma_parameter.data.send_data_out = 1;
     last_layer->interrupt_enabe.data.int_en = 1;
 
-    task->dma_ch = dma_ch;//dma通道
+    task->dma_ch = dma_ch; //dma通道
     task->dst = dest;
-    task->dst_length = output_size;//输出字节数
+    task->dst_length = output_size; //输出字节数
     task->callback = callback;
     //remain_layers等同于layers？
-    task->remain_layers_length = task->layers_length;//模型的层数
-    task->remain_layers = task->layers;//模型的层
+    task->remain_layers_length = task->layers_length; //模型的层数
+    task->remain_layers = task->layers;               //模型的层
 
-    plic_set_priority(IRQN_AI_INTERRUPT, 1);//设置外部中断优先级
-    plic_irq_register(IRQN_AI_INTERRUPT, kpu_continue, task);//设置IRON_AI_INTERUPT中断的callback函数为 kpu_continue,上下文为task
-    plic_irq_enable(IRQN_AI_INTERRUPT);//使能外部中断
+    plic_set_priority(IRQN_AI_INTERRUPT, 1);                  //设置外部中断优先级
+    plic_irq_register(IRQN_AI_INTERRUPT, kpu_continue, task); //设置IRON_AI_INTERUPT中断的callback函数为 kpu_continue,上下文为task
+    plic_irq_enable(IRQN_AI_INTERRUPT);                       //使能外部中断
 
     kpu_run_dma_input(dma_ch, src, kpu_run_dma_input_done_push_layers, task);
 
     return 0;
 }
-uint8_t *kpu_get_output_buf(kpu_task_t* task)
+uint8_t *kpu_get_output_buf(kpu_task_t *task)
 {
-    kpu_layer_argument_t* last_layer = &task->layers[task->layers_length-1];
-    size_t output_size = ((last_layer->dma_parameter.data.dma_total_byte+1) + 7) / 8 * 8;
+    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];
+    size_t output_size = ((last_layer->dma_parameter.data.dma_total_byte + 1) + 7) / 8 * 8;
     return malloc(output_size);
 }
 
 void kpu_release_output_buf(uint8_t *output_buf)
 {
-    if(output_buf != NULL)
+    if (output_buf != NULL)
         free(output_buf);
 }
 
@@ -249,7 +241,7 @@ static void kpu_data_output(kpu_task_t *task)
     sysctl_dma_select(task->dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
     dmac_irq_register(task->dma_ch, kpu_done, task, 1);
     dmac_set_single_mode(task->dma_ch, (void *)(&kpu->fifo_data_out), (void *)(task->dst), DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, task->dst_length);
+                         DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, task->dst_length);
 }
 
 static int kpu_data_ready(void *ctx)
@@ -262,21 +254,17 @@ static int kpu_data_ready(void *ctx)
     kpu->eight_bit_mode.reg = task->eight_bit_mode;
     kpu->interrupt_mask.reg = 7;
     kpu->interrupt_clear.reg = 7;
-    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t)
-    {
-        .fifo_full_threshold = 12, .fifo_empty_threshold = 1
-    };
+    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
+        .fifo_full_threshold = 12, .fifo_empty_threshold = 1};
 
     plic_set_priority(IRQN_AI_INTERRUPT, 2);
     plic_irq_register(IRQN_AI_INTERRUPT, kpu_config_input, task);
     plic_irq_enable(IRQN_AI_INTERRUPT);
     kpu_config_input(task);
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 0,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
     return 0;
 }
 
@@ -290,21 +278,21 @@ static void kpu_data_input(kpu_task_t *task)
     dmac_irq_register(task->dma_ch, kpu_data_ready, task, 1);
     kpu_layer_argument_t *layer = &task->layers[0];
     dmac_set_single_mode(task->dma_ch, (void *)(uintptr_t)task->src, (void *)(uintptr_t)(AI_IO_BASE_ADDR + layer->image_addr.data.image_src_addr * 64), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, task->src_length);
+                         DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, task->src_length);
 }
 
 int kpu_single_task_init(kpu_task_t *task)
 {
-    sysctl_clock_enable(SYSCTL_CLOCK_AI);   //使能clk_en_peri.ai_clk_en
-    kpu_layer_argument_t *first_layer = &task->layers[0];//任务句柄的第一层
-    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1];//和最后一层
+    sysctl_clock_enable(SYSCTL_CLOCK_AI);                                      //使能clk_en_peri.ai_clk_en
+    kpu_layer_argument_t *first_layer = &task->layers[0];                      //任务句柄的第一层
+    kpu_layer_argument_t *last_layer = &task->layers[task->layers_length - 1]; //和最后一层
 
     last_layer->dma_parameter.data.send_data_out = 1;
-    last_layer->interrupt_enabe.data.int_en = 1;//设置一些参数
+    last_layer->interrupt_enabe.data.int_en = 1; //设置一些参数
     task->src_length = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num + 1) / 8;
     task->dst_length = ((last_layer->dma_parameter.data.dma_total_byte + 1) + 7) / 8;
-    task->dst = (uint64_t *)malloc(task->dst_length * 8);//dst_length单位为8字节
-    memset(task->dst, 0, task->dst_length * 8);//将task目标地址初始化为0
+    task->dst = (uint64_t *)malloc(task->dst_length * 8); //dst_length单位为8字节
+    memset(task->dst, 0, task->dst_length * 8);           //将task目标地址初始化为0
     if (task->dst == NULL)
         return 1;
     return 0;
@@ -374,20 +362,14 @@ static void kpu_send_layer(const kpu_layer_argument_t *layer)
 void kpu_init(int eight_bit_mode, plic_irq_callback_t callback, void *userdata)
 {
     kpu->interrupt_clear.reg = 7;
-    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t)
-    {
-        .fifo_full_threshold = 10, .fifo_empty_threshold = 1
-    };
-    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t)
-    {
-        .eight_bit_mode = eight_bit_mode
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
+        .fifo_full_threshold = 10, .fifo_empty_threshold = 1};
+    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t){
+        .eight_bit_mode = eight_bit_mode};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 0,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
 
     plic_set_priority(IRQN_AI_INTERRUPT, 1);
     plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
@@ -399,7 +381,7 @@ void kpu_input_dma(const kpu_layer_argument_t *layer, const uint8_t *src, dmac_c
     uint64_t input_size = layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (layer->image_channel_num.data.i_ch_num + 1);
     dmac_set_irq(dma_ch, callback, userdata, 1);
     dmac_set_single_mode(dma_ch, (void *)src, (void *)(uintptr_t)(AI_IO_BASE_ADDR + layer->image_addr.data.image_src_addr * 64), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
+                         DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
 }
 
 static void kpu_conv2d_core(kpu_layer_argument_t *layer)
@@ -409,40 +391,32 @@ static void kpu_conv2d_core(kpu_layer_argument_t *layer)
 
 void kpu_conv2d(kpu_layer_argument_t *layer)
 {
-    kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-    {
+    kpu->interrupt_clear.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+        .layer_cfg_almost_full_int = 1};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 0,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
     kpu_conv2d_core(layer);
 }
 
 void kpu_conv2d_output(kpu_layer_argument_t *layer, dmac_channel_number_t dma_ch, uint8_t *dest, plic_irq_callback_t callback, void *userdata)
 {
-    kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-    {
+    kpu->interrupt_clear.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+        .layer_cfg_almost_full_int = 1};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
     layer->dma_parameter.data.send_data_out = 1;
     sysctl_dma_select(dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
     dmac_set_irq(dma_ch, callback, userdata, 1);
     dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer->dma_parameter.data.dma_total_byte + 8) / 8);
+                         DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer->dma_parameter.data.dma_total_byte + 8) / 8);
     kpu_conv2d_core(layer);
 }
 
@@ -451,23 +425,19 @@ void kpu_conv2d_output_full_add(kpu_layer_argument_t *layer, dmac_channel_number
     uint32_t channels = layer->image_channel_num.data.o_ch_num + 1;
     layer->interrupt_enabe.data.full_add = 1;
 
-    kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-    {
+    kpu->interrupt_clear.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+        .layer_cfg_almost_full_int = 1};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
     layer->dma_parameter.data.send_data_out = 1;
     sysctl_dma_select(dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
     dmac_set_irq(dma_ch, callback, userdata, 1);
     dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, channels);
+                         DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, channels);
     kpu_conv2d_core(layer);
 }
 
@@ -479,8 +449,10 @@ void kpu_add(const uint8_t *src1, const quantize_param_t *src1_param, const uint
     for (i = 0; i < count; i++)
     {
         int value = ((*src1++ * q1.scale + q1.bias + *src2++ * q2.scale + q2.bias) - q3.bias) / q3.scale;
-        if (value < 0) value = 0;
-        if (value > 0xFF) value = 0xFF;
+        if (value < 0)
+            value = 0;
+        if (value > 0xFF)
+            value = 0xFF;
         *dest++ = value;
     }
 }
@@ -511,8 +483,10 @@ void kpu_global_average_pool(const uint8_t *src, const quantize_param_t *src_par
                         sum += *src++;
 
                     int value = ((sum * q1.scale + q1.bias) / kernel_size - q2.bias) / q2.scale;
-                    if (value < 0) value = 0;
-                    if (value > 0xFF) value = 0xFF;
+                    if (value < 0)
+                        value = 0;
+                    if (value > 0xFF)
+                        value = 0xFF;
                     y_origin[x] = value;
                 }
             }
@@ -528,8 +502,10 @@ void kpu_global_average_pool(const uint8_t *src, const quantize_param_t *src_par
                 sum += *src++;
 
             int value = ((sum * q1.scale + q1.bias) / kernel_size - q2.bias) / q2.scale;
-            if (value < 0) value = 0;
-            if (value > 0xFF) value = 0xFF;
+            if (value < 0)
+                value = 0;
+            if (value > 0xFF)
+                value = 0xFF;
             dest[oc] = value;
         }
     }
@@ -581,7 +557,6 @@ void kpu_dequantize(const uint8_t *src, const quantize_param_t *src_param, size_
     for (i = 0; i < count; i++)
         *dest++ = src[i] * q1.scale + q1.bias;
 }
-
 
 void kpu_input_with_padding(kpu_layer_argument_t *layer, const uint8_t *src, int width, int height, int channels)
 {
@@ -684,16 +659,16 @@ static void kpu_upload_core(size_t width, size_t height, size_t channels, const 
 
     if ((uintptr_t)src % 8 == 0 && width % 8 == 0)
     {
-#define UPLOAD_BEGIN()                                                                                               \
-    for (oc = 0; oc < channels; oc++)                                                                                \
-    {                                                                                                                \
-        uint8_t* channel_origin = dest + oc / row_group * row_length * height * 64 + oc % row_group * row_padding;   \
-        for (y = 0; y < height; y++)                                                                                 \
-        {                                                                                                            \
-            uint64_t* y_origin = (uint64_t*)(channel_origin + y * row_length * 64);                                               \
+#define UPLOAD_BEGIN()                                                                                             \
+    for (oc = 0; oc < channels; oc++)                                                                              \
+    {                                                                                                              \
+        uint8_t *channel_origin = dest + oc / row_group * row_length * height * 64 + oc % row_group * row_padding; \
+        for (y = 0; y < height; y++)                                                                               \
+        {                                                                                                          \
+            uint64_t *y_origin = (uint64_t *)(channel_origin + y * row_length * 64);
 
 #define UPLOAD_END() \
-        }            \
+    }                \
     }
 
         width /= 8;
@@ -701,7 +676,7 @@ static void kpu_upload_core(size_t width, size_t height, size_t channels, const 
         if (width == 1)
         {
             UPLOAD_BEGIN()
-                y_origin[0] = *u64_src++;
+            y_origin[0] = *u64_src++;
             UPLOAD_END()
         }
         else if (width == 2)
@@ -768,14 +743,14 @@ static void kpu_kmodel_add(const kpu_model_add_layer_argument_t *arg, kpu_model_
 
 static void kpu_quantized_add(const kpu_model_quant_add_layer_argument_t *arg, kpu_model_context_t *ctx)
 {
-    const uint8_t *src_a = (const uint8_t*)(ctx->main_buffer + arg->main_mem_in_a_address);
-    const uint8_t *src_b = (const uint8_t*)(ctx->main_buffer + arg->main_mem_in_b_address);
+    const uint8_t *src_a = (const uint8_t *)(ctx->main_buffer + arg->main_mem_in_a_address);
+    const uint8_t *src_b = (const uint8_t *)(ctx->main_buffer + arg->main_mem_in_b_address);
     size_t count = ALIGN_UP(arg->count, 8) / 8;
     int64_t off_a = arg->in_a_offset, mul_a = arg->in_a_mul, sh_a = arg->in_a_shift;
     int64_t off_b = arg->in_b_offset, mul_b = arg->in_b_mul, sh_b = arg->in_b_shift;
     int64_t off_o = arg->out_offset, mul_o = arg->out_mul, sh_o = arg->out_shift;
 
-    uint8_t* dest = (uint8_t*)(ctx->main_buffer + arg->main_mem_out_address);
+    uint8_t *dest = (uint8_t *)(ctx->main_buffer + arg->main_mem_out_address);
     size_t i;
 
     if (sh_a == sh_b)
@@ -785,11 +760,11 @@ static void kpu_quantized_add(const kpu_model_quant_add_layer_argument_t *arg, k
     int64_t b##x = *src_b++;
 
 #define QADD_UNROLL_2(x) \
-    a##x += off_a; \
+    a##x += off_a;       \
     b##x += off_b;
 
 #define QADD_UNROLL_3(x) \
-    a##x *= mul_a; \
+    a##x *= mul_a;       \
     b##x *= mul_b;
 
 #define QADD_UNROLL_4(x) \
@@ -813,15 +788,15 @@ static void kpu_quantized_add(const kpu_model_quant_add_layer_argument_t *arg, k
 #define QADD_UNROLL_10(x) \
     *dest++ = v##x;
 
-#define QADD_UNROLL_S(x) \
-    QADD_UNROLL_##x(0) \
-    QADD_UNROLL_##x(1) \
-    QADD_UNROLL_##x(2) \
-    QADD_UNROLL_##x(3) \
-    QADD_UNROLL_##x(4) \
-    QADD_UNROLL_##x(5) \
-    QADD_UNROLL_##x(6) \
-    QADD_UNROLL_##x(7)
+#define QADD_UNROLL_S(x)                       \
+    QADD_UNROLL_##x(0)                         \
+        QADD_UNROLL_##x(1)                     \
+            QADD_UNROLL_##x(2)                 \
+                QADD_UNROLL_##x(3)             \
+                    QADD_UNROLL_##x(4)         \
+                        QADD_UNROLL_##x(5)     \
+                            QADD_UNROLL_##x(6) \
+                                QADD_UNROLL_##x(7)
 
         for (i = 0; i < count; i++)
         {
@@ -846,17 +821,17 @@ static void kpu_quantized_add(const kpu_model_quant_add_layer_argument_t *arg, k
 
 #undef QADD_UNROLL_2
 #define QADD_UNROLL_2(x) \
-    a##x += off_a; \
+    a##x += off_a;       \
     b##x += off_b;
 
 #undef QADD_UNROLL_3
 #define QADD_UNROLL_3(x) \
-    a##x *= mul_a; \
+    a##x *= mul_a;       \
     b##x *= mul_b;
 
 #undef QADD_UNROLL_4
 #define QADD_UNROLL_4(x) \
-    a##x >>= sh_a; \
+    a##x >>= sh_a;       \
     b##x >>= sh_b;
 
 #undef QADD_UNROLL_5
@@ -884,15 +859,15 @@ static void kpu_quantized_add(const kpu_model_quant_add_layer_argument_t *arg, k
     *dest++ = v##x;
 
 #undef QADD_UNROLL_S
-#define QADD_UNROLL_S(x) \
-    QADD_UNROLL_##x(0) \
-    QADD_UNROLL_##x(1) \
-    QADD_UNROLL_##x(2) \
-    QADD_UNROLL_##x(3) \
-    QADD_UNROLL_##x(4) \
-    QADD_UNROLL_##x(5) \
-    QADD_UNROLL_##x(6) \
-    QADD_UNROLL_##x(7)
+#define QADD_UNROLL_S(x)                       \
+    QADD_UNROLL_##x(0)                         \
+        QADD_UNROLL_##x(1)                     \
+            QADD_UNROLL_##x(2)                 \
+                QADD_UNROLL_##x(3)             \
+                    QADD_UNROLL_##x(4)         \
+                        QADD_UNROLL_##x(5)     \
+                            QADD_UNROLL_##x(6) \
+                                QADD_UNROLL_##x(7)
 
         for (i = 0; i < count; i++)
         {
@@ -1018,7 +993,8 @@ static void kpu_average_pool2d(const kpu_model_ave_pool2d_layer_argument_t *arg,
 static void kpu_quantize(const kpu_model_quantize_layer_argument_t *arg, kpu_model_context_t *ctx)
 {
     size_t count = arg->count;
-    const float *src = (const float *)(ctx->main_buffer + arg->main_mem_in_address);;
+    const float *src = (const float *)(ctx->main_buffer + arg->main_mem_in_address);
+    ;
     const kpu_model_quant_param_t q = arg->quant_param;
     float scale = 1.f / q.scale;
 
@@ -1027,8 +1003,10 @@ static void kpu_quantize(const kpu_model_quantize_layer_argument_t *arg, kpu_mod
     for (i = 0; i < count; i++)
     {
         int value = roundf((*src++ - q.bias) * scale);
-        if (value < 0) value = 0;
-        if (value > 0xFF) value = 0xFF;
+        if (value < 0)
+            value = 0;
+        if (value > 0xFF)
+            value = 0xFF;
         *dest++ = (uint8_t)value;
     }
 }
@@ -1149,22 +1127,22 @@ static void kpu_kmodel_fully_connected(const kpu_model_fully_connected_layer_arg
 
     if (in_channels % 8 == 0)
     {
-#define FC_UNROLL_1(x)        \
-    float i##x = *c_src++;    \
+#define FC_UNROLL_1(x)     \
+    float i##x = *c_src++; \
     float w##x = *c_weights++;
 
-#define FC_UNROLL_2(x)        \
+#define FC_UNROLL_2(x) \
     sum += i##x * w##x;
 
-#define FC_UNROLL_S(x) \
-    FC_UNROLL_##x(0) \
-    FC_UNROLL_##x(1) \
-    FC_UNROLL_##x(2) \
-    FC_UNROLL_##x(3) \
-    FC_UNROLL_##x(4) \
-    FC_UNROLL_##x(5) \
-    FC_UNROLL_##x(6) \
-    FC_UNROLL_##x(7)
+#define FC_UNROLL_S(x)                       \
+    FC_UNROLL_##x(0)                         \
+        FC_UNROLL_##x(1)                     \
+            FC_UNROLL_##x(2)                 \
+                FC_UNROLL_##x(3)             \
+                    FC_UNROLL_##x(4)         \
+                        FC_UNROLL_##x(5)     \
+                            FC_UNROLL_##x(6) \
+                                FC_UNROLL_##x(7)
 
         for (oc = 0; oc < out_channels; oc++)
         {
@@ -1222,7 +1200,7 @@ static void kpu_resize_nearest_neighbor(const kpu_model_resize_nearest_neighbor_
     for (oc = 0; oc < in_shape.channels; oc++)
     {
         const float *channel_src = src + in_shape.width * in_shape.height * oc;
-        for (oy = 0; oy <out_height; oy++)
+        for (oy = 0; oy < out_height; oy++)
         {
             uint32_t in_y = (uint32_t)min(floorf(oy * height_scale), in_shape.height - 1);
             const float *y_origin = channel_src + in_y * in_shape.width;
@@ -1249,7 +1227,7 @@ static void kpu_quant_resize_nearest_neighbor(const kpu_model_quant_resize_neare
     for (oc = 0; oc < in_shape.channels; oc++)
     {
         const uint8_t *channel_src = src + in_shape.width * in_shape.height * oc;
-        for (oy = 0; oy <out_height; oy++)
+        for (oy = 0; oy < out_height; oy++)
         {
             uint32_t in_y = (uint32_t)min(floorf(oy * height_scale), in_shape.height - 1);
             const uint8_t *y_origin = channel_src + in_y * in_shape.width;
@@ -1283,18 +1261,14 @@ static void kpu_conv(const kpu_model_conv_layer_argument_t *arg, kpu_model_conte
     {
         dmac_channel_number_t dma_ch = ctx->dma_ch;
         uint8_t *dest = ctx->main_buffer + arg->main_mem_out_address;
-        kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-        {
+        kpu->interrupt_clear.data = (kpu_config_interrupt_t){
             .calc_done_int = 1,
             .layer_cfg_almost_empty_int = 1,
-            .layer_cfg_almost_full_int = 1
-        };
-        kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-        {
+            .layer_cfg_almost_full_int = 1};
+        kpu->interrupt_mask.data = (kpu_config_interrupt_t){
             .calc_done_int = 1,
             .layer_cfg_almost_empty_int = 1,
-            .layer_cfg_almost_full_int = 1
-        };
+            .layer_cfg_almost_full_int = 1};
         layer.dma_parameter.data.send_data_out = 1;
         sysctl_dma_select(dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
         if (ctx->current_layer != ctx->layers_length)
@@ -1302,23 +1276,19 @@ static void kpu_conv(const kpu_model_conv_layer_argument_t *arg, kpu_model_conte
         else
             dmac_set_irq(dma_ch, (plic_irq_callback_t)kpu_kmodel_done, ctx, 1);
         dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-            DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer.dma_parameter.data.dma_total_byte + 8) / 8);
+                             DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer.dma_parameter.data.dma_total_byte + 8) / 8);
     }
     else
     {
-        kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-        {
+        kpu->interrupt_clear.data = (kpu_config_interrupt_t){
             .calc_done_int = 1,
             .layer_cfg_almost_empty_int = 1,
-            .layer_cfg_almost_full_int = 1
-        };
+            .layer_cfg_almost_full_int = 1};
 
-        kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-        {
+        kpu->interrupt_mask.data = (kpu_config_interrupt_t){
             .calc_done_int = 0,
             .layer_cfg_almost_empty_int = 1,
-            .layer_cfg_almost_full_int = 1
-        };
+            .layer_cfg_almost_full_int = 1};
         layer.interrupt_enabe.data.int_en = 1;
     }
 
@@ -1406,7 +1376,7 @@ int kpu_get_output(kpu_model_context_t *ctx, uint32_t index, uint8_t **data, siz
     if (index >= ctx->output_count)
         return -1;
 
-    const kpu_model_output_t * output = ctx->outputs + index;
+    const kpu_model_output_t *output = ctx->outputs + index;
     *data = ctx->main_buffer + output->address;
     *size = output->size;
     return 0;
@@ -1428,70 +1398,66 @@ static const char *str_layer_type(uint32_t type)
 {
     switch (type)
     {
-        case KL_ADD:
-            return "Add";
-        case KL_QUANTIZED_ADD:
-            return "QuantAdd";
-        case KL_GLOBAL_AVERAGE_POOL2D:
-            return "GAP";
-        case KL_QUANTIZED_MAX_POOL2D:
-            return "QuantMaxPool2d";
-        case KL_AVERAGE_POOL2D:
-            return "AveragePool2d";
-        case KL_QUANTIZE:
-            return "Quantize";
-        case KL_DEQUANTIZE:
-            return "Dequantize";
-        case KL_REQUANTIZE:
-            return "Requantize";
-        case KL_L2_NORMALIZATION:
-            return "L2Norm";
-        case KL_SOFTMAX:
-            return "Softmax";
-        case KL_CONCAT:
-            return "Concat";
-        case KL_QUANTIZED_CONCAT:
-            return "QuantConcat";
-        case KL_FULLY_CONNECTED:
-            return "FullyConnected";
-        case KL_TENSORFLOW_FLATTEN:
-            return "TFFlatten";
-        case KL_RESIZE_NEAREST_NEIGHBOR:
-            return "ResizeNearestNeighbor";
-        case KL_QUANTIZED_RESIZE_NEAREST_NEIGHBOR:
-            return "QuantResizeNearestNeighbor";
-        case KL_CHANNELWISE_DEQUANTIZE:
-            return "ChannelwiseDequantize";
-        case KL_LOGISTIC:
-            return "Logistic";
-        case KL_K210_CONV:
-            return "K210Conv";
-        case KL_K210_ADD_PADDING:
-            return "K210AddPad";
-        case KL_K210_REMOVE_PADDING:
-            return "K210RemovePad";
-        case KL_K210_UPLOAD:
-            return "K210Upload";
-        default:
-            return "Unknown";
+    case KL_ADD:
+        return "Add";
+    case KL_QUANTIZED_ADD:
+        return "QuantAdd";
+    case KL_GLOBAL_AVERAGE_POOL2D:
+        return "GAP";
+    case KL_QUANTIZED_MAX_POOL2D:
+        return "QuantMaxPool2d";
+    case KL_AVERAGE_POOL2D:
+        return "AveragePool2d";
+    case KL_QUANTIZE:
+        return "Quantize";
+    case KL_DEQUANTIZE:
+        return "Dequantize";
+    case KL_REQUANTIZE:
+        return "Requantize";
+    case KL_L2_NORMALIZATION:
+        return "L2Norm";
+    case KL_SOFTMAX:
+        return "Softmax";
+    case KL_CONCAT:
+        return "Concat";
+    case KL_QUANTIZED_CONCAT:
+        return "QuantConcat";
+    case KL_FULLY_CONNECTED:
+        return "FullyConnected";
+    case KL_TENSORFLOW_FLATTEN:
+        return "TFFlatten";
+    case KL_RESIZE_NEAREST_NEIGHBOR:
+        return "ResizeNearestNeighbor";
+    case KL_QUANTIZED_RESIZE_NEAREST_NEIGHBOR:
+        return "QuantResizeNearestNeighbor";
+    case KL_CHANNELWISE_DEQUANTIZE:
+        return "ChannelwiseDequantize";
+    case KL_LOGISTIC:
+        return "Logistic";
+    case KL_K210_CONV:
+        return "K210Conv";
+    case KL_K210_ADD_PADDING:
+        return "K210AddPad";
+    case KL_K210_REMOVE_PADDING:
+        return "K210RemovePad";
+    case KL_K210_UPLOAD:
+        return "K210Upload";
+    default:
+        return "Unknown";
     }
 }
 #endif
 
 static int kpu_kmodel_done(kpu_model_context_t *ctx)
 {
-    kpu->interrupt_clear.data = (kpu_config_interrupt_t)
-    {
+    kpu->interrupt_clear.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+        .layer_cfg_almost_full_int = 1};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
 #if KPU_DEBUG
     uint32_t cnt_layer_id = ctx->current_layer - 1;
     uint64_t time = sysctl_get_time_us();
@@ -1538,72 +1504,72 @@ static int ai_step(void *userdata)
 
     switch (cnt_layer_header->type)
     {
-        case KL_ADD:
-            kpu_kmodel_add((const kpu_model_add_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_QUANTIZED_ADD:
-            kpu_quantized_add((const kpu_model_quant_add_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_GLOBAL_AVERAGE_POOL2D:
-            kpu_global_average_pool2d((const kpu_model_gap2d_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_QUANTIZED_MAX_POOL2D:
-            kpu_quantized_max_pool2d((const kpu_model_quant_max_pool2d_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_AVERAGE_POOL2D:
-            kpu_average_pool2d((const kpu_model_ave_pool2d_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_QUANTIZE:
-            kpu_quantize((const kpu_model_quantize_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_DEQUANTIZE:
-            kpu_kmodel_dequantize((const kpu_model_dequantize_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_REQUANTIZE:
-            kpu_requantize((const kpu_model_requantize_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_L2_NORMALIZATION:
-            kpu_l2_normalization((const kpu_model_l2_norm_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_SOFTMAX:
-            kpu_softmax((const kpu_model_softmax_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_CONCAT:
-        case KL_QUANTIZED_CONCAT:
-            kpu_concat((const kpu_model_concat_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_FULLY_CONNECTED:
-            kpu_kmodel_fully_connected((const kpu_model_fully_connected_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_TENSORFLOW_FLATTEN:
-            kpu_tf_flatten((const kpu_model_tf_flatten_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_RESIZE_NEAREST_NEIGHBOR:
-            kpu_resize_nearest_neighbor((const kpu_model_resize_nearest_neighbor_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_QUANTIZED_RESIZE_NEAREST_NEIGHBOR:
-            kpu_quant_resize_nearest_neighbor((const kpu_model_quant_resize_nearest_neighbor_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_CHANNELWISE_DEQUANTIZE:
-            kpu_kmodel_channelwise_dequantize((const kpu_model_channelwise_dequant_argument_t *)layer_body, ctx);
-            break;
-        case KL_LOGISTIC:
-            kpu_logistic((const kpu_model_logistic_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_K210_CONV:
-            kpu_conv((const kpu_model_conv_layer_argument_t *)layer_body, ctx);
-            return 0;
-        case KL_K210_ADD_PADDING:
-            kpu_add_padding((const kpu_model_add_padding_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_K210_REMOVE_PADDING:
-            kpu_remove_padding((const kpu_model_remove_padding_layer_argument_t *)layer_body, ctx);
-            break;
-        case KL_K210_UPLOAD:
-            kpu_upload((const kpu_model_upload_layer_argument_t *)layer_body, ctx);
-            break;
-        default:
-            assert(!"Layer is not supported.");
+    case KL_ADD:
+        kpu_kmodel_add((const kpu_model_add_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_QUANTIZED_ADD:
+        kpu_quantized_add((const kpu_model_quant_add_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_GLOBAL_AVERAGE_POOL2D:
+        kpu_global_average_pool2d((const kpu_model_gap2d_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_QUANTIZED_MAX_POOL2D:
+        kpu_quantized_max_pool2d((const kpu_model_quant_max_pool2d_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_AVERAGE_POOL2D:
+        kpu_average_pool2d((const kpu_model_ave_pool2d_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_QUANTIZE:
+        kpu_quantize((const kpu_model_quantize_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_DEQUANTIZE:
+        kpu_kmodel_dequantize((const kpu_model_dequantize_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_REQUANTIZE:
+        kpu_requantize((const kpu_model_requantize_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_L2_NORMALIZATION:
+        kpu_l2_normalization((const kpu_model_l2_norm_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_SOFTMAX:
+        kpu_softmax((const kpu_model_softmax_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_CONCAT:
+    case KL_QUANTIZED_CONCAT:
+        kpu_concat((const kpu_model_concat_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_FULLY_CONNECTED:
+        kpu_kmodel_fully_connected((const kpu_model_fully_connected_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_TENSORFLOW_FLATTEN:
+        kpu_tf_flatten((const kpu_model_tf_flatten_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_RESIZE_NEAREST_NEIGHBOR:
+        kpu_resize_nearest_neighbor((const kpu_model_resize_nearest_neighbor_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_QUANTIZED_RESIZE_NEAREST_NEIGHBOR:
+        kpu_quant_resize_nearest_neighbor((const kpu_model_quant_resize_nearest_neighbor_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_CHANNELWISE_DEQUANTIZE:
+        kpu_kmodel_channelwise_dequantize((const kpu_model_channelwise_dequant_argument_t *)layer_body, ctx);
+        break;
+    case KL_LOGISTIC:
+        kpu_logistic((const kpu_model_logistic_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_K210_CONV:
+        kpu_conv((const kpu_model_conv_layer_argument_t *)layer_body, ctx);
+        return 0;
+    case KL_K210_ADD_PADDING:
+        kpu_add_padding((const kpu_model_add_padding_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_K210_REMOVE_PADDING:
+        kpu_remove_padding((const kpu_model_remove_padding_layer_argument_t *)layer_body, ctx);
+        break;
+    case KL_K210_UPLOAD:
+        kpu_upload((const kpu_model_upload_layer_argument_t *)layer_body, ctx);
+        break;
+    default:
+        assert(!"Layer is not supported.");
     }
 
     if (cnt_layer_id != (ctx->layers_length - 1))
@@ -1635,20 +1601,14 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
 
     kpu_kmodel_header_t *header = (kpu_kmodel_header_t *)ctx->model_buffer;
     kpu->interrupt_clear.reg = 7;
-    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t)
-    {
-        .fifo_full_threshold = 10, .fifo_empty_threshold = 1
-    };
-    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t)
-    {
-        .eight_bit_mode = header->flags & 1
-    };
-    kpu->interrupt_mask.data = (kpu_config_interrupt_t)
-    {
+    kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
+        .fifo_full_threshold = 10, .fifo_empty_threshold = 1};
+    kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t){
+        .eight_bit_mode = header->flags & 1};
+    kpu->interrupt_mask.data = (kpu_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 0,
-        .layer_cfg_almost_full_int = 1
-    };
+        .layer_cfg_almost_full_int = 1};
 
     plic_set_priority(IRQN_AI_INTERRUPT, 1);
     plic_irq_register(IRQN_AI_INTERRUPT, ai_step, ctx);
@@ -1672,4 +1632,3 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
 
     return 0;
 }
-

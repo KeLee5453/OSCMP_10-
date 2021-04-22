@@ -1,0 +1,1 @@
+int kpu_test(void);
