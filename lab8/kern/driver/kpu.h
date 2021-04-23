@@ -17,6 +17,9 @@
 
 #include <plic.h>
 #include "dmac.h"
+#include "util.h"
+#include "stdio.h"
+#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C"

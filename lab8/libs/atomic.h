@@ -4,9 +4,9 @@
 /* Atomic operations that C can't guarantee us. Useful for resource counting
  * etc.. */
 
-static inline void set_bit(int nr, volatile void *addr)
+static inline void at_set_bit(int nr, volatile void *addr)
     __attribute__((always_inline));
-static inline void clear_bit(int nr, volatile void *addr)
+static inline void at_clear_bit(int nr, volatile void *addr)
     __attribute__((always_inline));
 static inline void change_bit(int nr, volatile void *addr)
     __attribute__((always_inline));
@@ -57,7 +57,7 @@ static inline bool test_and_clear_bit(int nr, volatile void *addr)
  * Note that @nr may be almost arbitrarily large; this function is not
  * restricted to acting on a single-word quantity.
  * */
-static inline void set_bit(int nr, volatile void *addr) {
+static inline void at_set_bit(int nr, volatile void *addr) {
     __op_bit(or, __NOP, nr, ((volatile unsigned long *)addr));
 }
 
@@ -66,7 +66,7 @@ static inline void set_bit(int nr, volatile void *addr) {
  * @nr:     the bit to clear
  * @addr:   the address to start counting from
  * */
-static inline void clear_bit(int nr, volatile void *addr) {
+static inline void at_clear_bit(int nr, volatile void *addr) {
     __op_bit(and, __NOT, nr, ((volatile unsigned long *)addr));
 }
 

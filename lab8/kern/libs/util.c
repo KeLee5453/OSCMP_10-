@@ -20,7 +20,13 @@ void set_bit(volatile uint32_t *bits, uint32_t offset)
     set_bits_value(bits, 1 << offset, 1 << offset);
 }
 
-void clear_bit(volatile uint32_t *bits, uint32_t offset)
+ void clear_bit(volatile uint32_t *bits, uint32_t offset)
 {
     set_bits_value(bits, 1 << offset, 0);
+}
+uint32_t is_memory_cache(uintptr_t address)
+{
+    #define MEM_CACHE_LEN (6 * 1024 * 1024)//k210内存空间为0x80000000~0x80600000？
+
+    return ((address >= 0x80000000) && (address < 0x80000000 + MEM_CACHE_LEN));
 }
