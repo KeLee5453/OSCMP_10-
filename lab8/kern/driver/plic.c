@@ -24,10 +24,20 @@
 
 void plic_init(void)
 {
-    writel(1, PLIC_BASE_ADDR + DISK_IRQ * sizeof(uint32_t));
-    writel(1, PLIC_BASE_ADDR + UART_IRQ * sizeof(uint32_t));
-    writel(1, PLIC_BASE_ADDR + AI_IRQ * sizeof(uint32_t));
-    writel(1, PLIC_BASE_ADDR + DMA5_IRQ * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_DMA0_INTERRUPT * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_DMA5_INTERRUPT * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_AI_INTERRUPT * sizeof(uint32_t));
+
+    for (int i = 0; i < IRQN_MAX; i++)
+    {
+        /* clang-format off */
+        plic_instance[i] = (const plic_instance_t){
+            .callback = NULL,
+            .ctx      = NULL,
+        };
+        /* clang-format on */
+    }
     cprintf("plic_init\n");
 }
 
@@ -40,42 +50,20 @@ void plicinithart(void)
     *(uint32 *)PLIC_SPRIORITY(hart) = 0;
 #else
     uint32_t *hart_m_enable = (uint32_t *)PLIC_MENABLE;
-    *(hart_m_enable) = readd(hart_m_enable) | (1 << DISK_IRQ);
+    *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_UARTHS_INTERRUPT);
     uint32_t *hart0_m_int_enable_hi = hart_m_enable + 1;
-    *(hart0_m_int_enable_hi) = readd(hart0_m_int_enable_hi) | (1 << (UART_IRQ % 32));
+    *(hart0_m_int_enable_hi) = readl(hart0_m_int_enable_hi) | (1 << (IRQN_DMA0_INTERRUPT % 32));
 #endif
 #ifdef DEBUG
     printf("plicinithart\n");
 #endif
 }
-// ask the PLIC what interrupt we should serve.
-int plic_claim(void)
-{
-    int irq;
-#ifndef QEMU
-    irq = *(uint32_t *)PLIC_MCLAIM;
-#else
-    irq = *(uint32_t *)PLIC_SCLAIM;
-#endif
-    return irq;
-}
 
-// tell the PLIC we've served this IRQ.
-void plic_complete(int irq)
+void plic_irq_register(uint32_t irq, plic_irq_callback_t callback, void *ctx)
 {
-#ifndef QEMU
-    *(uint32_t *)PLIC_MCLAIM = irq;
-#else
-    *(uint32_t *)PLIC_SCLAIM = irq;
-#endif
-}
-
-void plic_set_irq(int irq)
-{
-    writel(1, PLIC_BASE_ADDR + irq * sizeof(uint32_t));
-}
-
-void plic_clear_irq(int irq)
-{
-    writel(0, PLIC_BASE_ADDR + irq * sizeof(uint32_t));
+    cprintf("_start %s [cnn] start run\n", __func__);
+    /* Set user callback function */
+    plic_instance[irq].callback = callback;
+    /* Assign user context */
+    plic_instance[irq].ctx = ctx;
 }

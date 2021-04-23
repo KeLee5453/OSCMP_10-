@@ -67,7 +67,7 @@ int kpu_test(void)
 
     cnn_task_init(&task);
     cprintf("task_init succeed\n");
-    cnn_run(&task, 5, g_ai_buf, image_dst);
+    cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
     cprintf("cnn_run succeed\n");
     while (!g_ai_done_flag)
         ;

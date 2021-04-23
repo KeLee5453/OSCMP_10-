@@ -41,16 +41,17 @@ int kern_init(void)
 
     pic_init(); // init interrupt controller
     idt_init(); // init interrupt descriptor table
-    dmac_init();
-    plic_init();
 
     vmm_init(); // init virtual memory management
     sched_init();
     proc_init(); // init process table
 
+    plic_init();
+    plicinithart();
     ide_init();  // init ide devices
     swap_init(); // init swap
     fs_init();
+    dmac_init();
 
     clock_init();  // init clock interrupt
     intr_enable(); // enable irq interrupt

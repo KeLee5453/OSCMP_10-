@@ -17,7 +17,8 @@
 #include <sync.h>
 #include <sbi.h>
 #include <proc.h>
-
+#include <plic.h>
+#include <io.h>
 #define TICK_NUM 2
 
 static void print_ticks()
@@ -27,17 +28,6 @@ static void print_ticks()
     cprintf("End of Test.\n");
     panic("EOT: kernel seems ok.");
 #endif
-}
-
-/* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
-void idt_init(void)
-{
-    extern void __alltraps(void);
-    /* Set sscratch register to 0, indicating to exception vector that we are
-     * presently executing in the kernel */
-    write_csr(sscratch, 0);
-    /* Set the exception vector address */
-    write_csr(stvec, &__alltraps);
 }
 
 /* trap_in_kernel - test if trap happened in kernel */
@@ -284,6 +274,32 @@ static inline void trap_dispatch(struct trapframe *tf)
     }
 }
 
+extern void dev_intr();
+int trap_in_ext(struct trapframe *tf)
+{
+    volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+    uint32_t irq = *hart0m_claim;
+    switch (irq)
+    {
+
+    case IRQN_UARTHS_INTERRUPT:
+        dev_intr();
+        break;
+    case IRQN_DMA0_INTERRUPT:
+        cprintf("IRQN_DMA0_INTERRUPT");
+        break;
+    case IRQN_AI_INTERRUPT:
+    case IRQN_DMA5_INTERRUPT: //AI
+
+        cprintf("[ext-trap]: %d", irq);
+        plic_instance[irq].callback(plic_instance[irq].ctx);
+        break;
+    default:
+        break;
+    }
+    *hart0m_claim = irq;
+}
+
 /* *
  * trap - handles or dispatches an exception/interrupt. if and when trap() returns,
  * the code in kern/trap/trapentry.S restores the old CPU state saved in the
@@ -318,4 +334,17 @@ void trap(struct trapframe *tf)
             }
         }
     }
+}
+
+/* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
+void idt_init(void)
+{
+    extern void __alltraps(void);
+    /* Set sscratch register to 0, indicating to exception vector that we are
+     * presently executing in the kernel */
+    write_csr(sscratch, 0);
+    /* Set the exception vector address */
+    write_csr(stvec, &__alltraps);
+    //设置外部中断跳转函数
+    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
 }

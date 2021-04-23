@@ -797,10 +797,10 @@ void dmac_wait_idle(dmac_channel_number_t channel_num)
     bool intr_flag;
     while (!dmac_is_idle(channel_num))
     {
-        local_intr_save(intr_flag);
-        wait_t __wait, *wait = &__wait;
-        wait_current_set(wait_queue, wait, WT_DMA);
-        local_intr_restore(intr_flag);
+        // local_intr_save(intr_flag);
+        // wait_t __wait, *wait = &__wait;
+        // wait_current_set(wait_queue, wait, WT_DMA);
+        // local_intr_restore(intr_flag);
     };
     dmac_chanel_interrupt_clear(channel_num); /* clear interrupt */
 }
@@ -809,11 +809,11 @@ void dmac_intr(dmac_channel_number_t channel_num)
 {
     LOG("_start %s [dmac] start run\n", __func__);
 
-    dmac_chanel_interrupt_clear(channel_num);
-    if (!wait_queue_empty(wait_queue))
-    {
-        wakeup_queue(wait_queue, WT_DMA, 1);
-    }
+    // dmac_chanel_interrupt_clear(channel_num);
+    // if (!wait_queue_empty(wait_queue))
+    // {
+    //     wakeup_queue(wait_queue, WT_DMA, 1);
+    // }
 }
 // void dmac_set_src_dest_length(dmac_channel_number_t channel_num, const void *src, void *dest, size_t len)
 // {

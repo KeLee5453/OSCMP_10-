@@ -27,16 +27,16 @@
 #define SBI_SHUTDOWN 8
 #define SBI_REGISTER_DEVINTR 9
 
-#define SBI_CALL(which, arg0, arg1, arg2) ({			\
-	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);	\
-	register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);	\
-	register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);	\
-	register uintptr_t a7 asm ("a7") = (uintptr_t)(which);	\
-	asm volatile ("ecall"					\
-		      : "+r" (a0)				\
-		      : "r" (a1), "r" (a2), "r" (a7)		\
-		      : "memory");				\
-	a0;							\
+#define SBI_CALL(which, arg0, arg1, arg2) ({              \
+	register uintptr_t a0 asm("a0") = (uintptr_t)(arg0);  \
+	register uintptr_t a1 asm("a1") = (uintptr_t)(arg1);  \
+	register uintptr_t a2 asm("a2") = (uintptr_t)(arg2);  \
+	register uintptr_t a7 asm("a7") = (uintptr_t)(which); \
+	asm volatile("ecall"                                  \
+				 : "+r"(a0)                               \
+				 : "r"(a1), "r"(a2), "r"(a7)              \
+				 : "memory");                             \
+	a0;                                                   \
 })
 
 /* Lazy implementations until SBI is finalized */
@@ -84,22 +84,28 @@ static inline void sbi_remote_fence_i(const unsigned long *hart_mask)
 }
 
 static inline void sbi_remote_sfence_vma(const unsigned long *hart_mask,
-					 unsigned long start,
-					 unsigned long size)
+										 unsigned long start,
+										 unsigned long size)
 {
 	SBI_CALL_1(SBI_REMOTE_SFENCE_VMA, hart_mask);
 }
 
 static inline void sbi_remote_sfence_vma_asid(const unsigned long *hart_mask,
-					      unsigned long start,
-					      unsigned long size,
-					      unsigned long asid)
+											  unsigned long start,
+											  unsigned long size,
+											  unsigned long asid)
 {
 	SBI_CALL_1(SBI_REMOTE_SFENCE_VMA_ASID, hart_mask);
 }
 
-static inline void sbi_register_devintr(uintptr_t entry) {
-    SBI_CALL_1(SBI_REGISTER_DEVINTR, entry);
+static inline void sbi_register_devintr(uintptr_t entry)
+{
+	SBI_CALL_1(SBI_REGISTER_DEVINTR, entry);
+}
+
+static inline void sbi_set_mie(void)
+{
+	SBI_CALL_0(0x0A000005);
 }
 
 #endif /* !__SBI_H__ */

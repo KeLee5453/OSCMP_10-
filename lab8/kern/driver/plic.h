@@ -125,11 +125,40 @@
 #define UART_IRQ 10
 #define DISK_IRQ 1
 #else // k210
-#define UART_IRQ 33
-#define DMA5_IRQ 32
-#define DISK_IRQ 27
-#define AI_IRQ 25
+#define IRQN_UARTHS_INTERRUPT 33
+#define IRQN_DMA5_INTERRUPT 32
+#define IRQN_DMA0_INTERRUPT 27
+#define IRQN_AI_INTERRUPT 25
+#define IRQN_MAX 4
 #endif
+
+/**
+ * @brief       Definitions for the interrupt callbacks
+ */
+typedef int (*plic_irq_callback_t)(void *ctx);
+
+/**
+ * @brief       Definitions for IRQ table instance
+ */
+typedef struct _plic_instance_t
+{
+    plic_irq_callback_t callback;
+    void *ctx;
+} plic_instance_t;
+static plic_instance_t plic_instance[IRQN_MAX];
+
+/**
+ * @brief       Register user callback function by IRQ number
+ *
+ * @param[in]   irq             The irq
+ * @param[in]   callback        The callback
+ * @param       ctx             The context
+ *
+ * @return      result
+ *     - 0      Success
+ *     - Other  Fail
+ */
+void plic_irq_register(uint32_t irq, plic_irq_callback_t callback, void *ctx);
 
 void plic_init(void);
 
