@@ -4,6 +4,48 @@
 #include "memlayout.h"
 
 /**
+ * @file
+ * @brief      The PLIC complies with the RISC-V Privileged Architecture
+ *             specification, and can support a maximum of 1023 external
+ *             interrupt sources targeting up to 15,872 core contexts.
+ *
+ * @note       PLIC RAM Layout
+ *
+ * | Address   | Description                     |
+ * |-----------|---------------------------------|
+ * |0x0C000000 | Reserved                        |
+ * |0x0C000004 | source 1 priority               |
+ * |0x0C000008 | source 2 priority               |
+ * |...        | ...                             |
+ * |0x0C000FFC | source 1023 priority            |
+ * |           |                                 |
+ * |0x0C001000 | Start of pending array          |
+ * |...        | (read-only)                     |
+ * |0x0C00107C | End of pending array            |
+ * |0x0C001080 | Reserved                        |
+ * |...        | ...                             |
+ * |0x0C001FFF | Reserved                        |
+ * |           |                                 |
+ * |0x0C002000 | target 0 enables                |
+ * |0x0C002080 | target 1 enables                |
+ * |...        | ...                             |
+ * |0x0C1F1F80 | target 15871 enables            |
+ * |0x0C1F2000 | Reserved                        |
+ * |...        | ...                             |
+ * |0x0C1FFFFC | Reserved                        |
+ * |           |                                 |
+ * |0x0C200000 | target 0 priority threshold     |
+ * |0x0C200004 | target 0 claim/complete         |
+ * |...        | ...                             |
+ * |0x0C201000 | target 1 priority threshold     |
+ * |0x0C201004 | target 1 claim/complete         |
+ * |...        | ...                             |
+ * |0x0FFFF000 | target 15871 priority threshold |
+ * |0x0FFFF004 | target 15871 claim/complete     |
+ *
+ */
+
+/**
  * @brief       PLIC External Interrupt Numbers
  *
  * @note        PLIC interrupt sources
@@ -84,10 +126,12 @@
 #define DISK_IRQ 1
 #else // k210
 #define UART_IRQ 33
+#define DMA5_IRQ 32
 #define DISK_IRQ 27
+#define AI_IRQ 25
 #endif
 
-void plicinit(void);
+void plic_init(void);
 
 // enable PLIC for each hart
 void plicinithart(void);
@@ -97,5 +141,9 @@ int plic_claim(void);
 
 // tell PLIC that we've served this IRQ
 void plic_complete(int irq);
+
+void plic_set_irq(int irq);
+
+void plic_clear_irq(int irq);
 
 #endif

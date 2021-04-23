@@ -25,6 +25,11 @@
 #include "wait.h"
 #include "sync.h"
 
+#ifdef _DEBUG
+#define LOG(fmt, args...) printk(fmt, ##args)
+#else
+#define LOG(fmt, args...) cprintf(fmt, ##args)
+#endif
 static wait_queue_t __wait_queue, *wait_queue =
                                       &__wait_queue;
 volatile dmac_t *const dmac = (dmac_t *)DMAC_BASE_ADDR;
@@ -56,6 +61,8 @@ uint64_t dmac_read_channel_id(dmac_channel_number_t channel_num)
 
 static void dmac_enable(void)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_cfg_u_t dmac_cfg;
 
     dmac_cfg.data = readq(&dmac->cfg);
@@ -66,6 +73,8 @@ static void dmac_enable(void)
 
 void dmac_disable(void)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_cfg_u_t dmac_cfg;
 
     dmac_cfg.data = readq(&dmac->cfg);
@@ -86,6 +95,8 @@ void dmac_disable(void)
 
 void dmac_channel_enable(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_chen_u_t chen;
 
     chen.data = readq(&dmac->chen);
@@ -125,6 +136,8 @@ void dmac_channel_enable(dmac_channel_number_t channel_num)
 
 void dmac_channel_disable(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_chen_u_t chen;
 
     chen.data = readq(&dmac->chen);
@@ -228,6 +241,8 @@ void dmac_channel_disable(dmac_channel_number_t channel_num)
 
 void dmac_enable_common_interrupt_status(void)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_commonreg_intstatus_enable_u_t intstatus;
 
     intstatus.data = readq(&dmac->com_intstatus_en);
@@ -242,6 +257,8 @@ void dmac_enable_common_interrupt_status(void)
 
 void dmac_enable_common_interrupt_signal(void)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_commonreg_intsignal_enable_u_t intsignal;
 
     intsignal.data = readq(&dmac->com_intsignal_en);
@@ -256,17 +273,23 @@ void dmac_enable_common_interrupt_signal(void)
 
 static void dmac_enable_channel_interrupt(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     writeq(0xffffffff, &dmac->channel[channel_num].intclear); //Interrupt Clear Register
     writeq(0x2, &dmac->channel[channel_num].intstatus_en);    //Interrupt Status Enable Register
 }
 
 void dmac_disable_channel_interrupt(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     writeq(0, &dmac->channel[channel_num].intstatus_en);
 }
 
 static void dmac_chanel_interrupt_clear(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     writeq(0xffffffff, &dmac->channel[channel_num].intclear);
 }
 
@@ -346,6 +369,7 @@ int dmac_set_channel_param(dmac_channel_number_t channel_num,
                            dmac_transfer_width_t dmac_trans_width,
                            uint32_t blockSize)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
     dmac_ch_ctl_u_t ctl;
     dmac_ch_cfg_u_t cfg_u;
 
@@ -399,6 +423,7 @@ int dmac_set_channel_param(dmac_channel_number_t channel_num,
     writeq(blockSize - 1, &dmac->channel[channel_num].block_ts);
     /*the number of (blcok_ts +1) data of width SRC_TR_WIDTF to be */
     /* transferred in a dma block transfer */
+    LOG("_end %s [dmac] end run\n", __func__);
     return 0;
 }
 
@@ -550,6 +575,8 @@ int dmac_set_channel_param(dmac_channel_number_t channel_num,
 
 void dmac_init(void)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     uint64_t tmp;
     dmac_commonreg_intclear_u_t intclear;
     dmac_cfg_u_t dmac_cfg;
@@ -725,6 +752,7 @@ void dmac_set_single_mode(dmac_channel_number_t channel_num,
                           dmac_transfer_width_t dmac_trans_width,
                           size_t block_size)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
     dmac_chanel_interrupt_clear(channel_num);
     dmac_channel_disable(channel_num);
     dmac_wait_idle(channel_num);
@@ -737,6 +765,8 @@ void dmac_set_single_mode(dmac_channel_number_t channel_num,
 
 int dmac_is_done(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     if (readq(&dmac->channel[channel_num].intstatus) & 0x2)
         return 1;
     else
@@ -750,6 +780,8 @@ void dmac_wait_done(dmac_channel_number_t channel_num)
 
 int dmac_is_idle(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_chen_u_t chen;
     chen.data = readq(&dmac->chen);
     if ((chen.data >> channel_num) & 0x1UL)
@@ -760,6 +792,8 @@ int dmac_is_idle(dmac_channel_number_t channel_num)
 
 void dmac_wait_idle(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     bool intr_flag;
     while (!dmac_is_idle(channel_num))
     {
@@ -773,6 +807,8 @@ void dmac_wait_idle(dmac_channel_number_t channel_num)
 
 void dmac_intr(dmac_channel_number_t channel_num)
 {
+    LOG("_start %s [dmac] start run\n", __func__);
+
     dmac_chanel_interrupt_clear(channel_num);
     if (!wait_queue_empty(wait_queue))
     {

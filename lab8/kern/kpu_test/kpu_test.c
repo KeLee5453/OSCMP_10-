@@ -5,7 +5,7 @@
 
 #include "fpioa.h"
 
-#include "kpu.h"
+// #include "kpu.h"
 #include "plic.h"
 #include "sysctl.h"
 #include <kmalloc.h>
@@ -66,9 +66,9 @@ int kpu_test(void)
     /*---------------加载图片到ai_buf-----------------*/
 
     cnn_task_init(&task);
-
-    cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
-
+    cprintf("task_init succeed\n");
+    cnn_run(&task, 5, g_ai_buf, image_dst);
+    cprintf("cnn_run succeed\n");
     while (!g_ai_done_flag)
         ;
     g_ai_done_flag = 0;

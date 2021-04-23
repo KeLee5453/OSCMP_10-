@@ -22,11 +22,13 @@
 #include "stdio.h"
 #include "io.h"
 
-void plicinit(void)
+void plic_init(void)
 {
-    writed(1, PLIC_BASE_ADDR + DISK_IRQ * sizeof(uint32_t));
-    writed(1, PLIC_BASE_ADDR + UART_IRQ * sizeof(uint32_t));
-    printf("plicinit\n");
+    writel(1, PLIC_BASE_ADDR + DISK_IRQ * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + UART_IRQ * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + AI_IRQ * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + DMA5_IRQ * sizeof(uint32_t));
+    cprintf("plic_init\n");
 }
 
 void plicinithart(void)
@@ -66,4 +68,14 @@ void plic_complete(int irq)
 #else
     *(uint32_t *)PLIC_SCLAIM = irq;
 #endif
+}
+
+void plic_set_irq(int irq)
+{
+    writel(1, PLIC_BASE_ADDR + irq * sizeof(uint32_t));
+}
+
+void plic_clear_irq(int irq)
+{
+    writel(0, PLIC_BASE_ADDR + irq * sizeof(uint32_t));
 }
