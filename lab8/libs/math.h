@@ -66,7 +66,11 @@ static inline int fast_roundf(float x)
 
 static inline float fast_fabsf(float d)
 {
-  return fabsf(d);
+  double x = d;
+
+  *(((int *)&x) + 1) &= 0x7fffffff;
+
+  return x;
 }
 
 typedef union

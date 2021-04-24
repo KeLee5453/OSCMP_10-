@@ -230,6 +230,7 @@ int cnn_run_dma_input_done_push_layers(void *_task)
 {
     LOG("_start %s\n", __func__);
     cnn_task_t *task = (cnn_task_t *)_task;
+    cprintf("cnn->interrupt_clear.reg : 0x%x\n", readq(&cnn->interrupt_clear.reg)); //0x4080 00020
     cnn->interrupt_clear.reg = 7;
     dmac->channel[task->dma_ch].intclear = 0xFFFFFFFF;
     cnn->fifo_threshold.data = (cnn_config_fifo_threshold_t){
@@ -298,8 +299,8 @@ int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, plic_irq_callbac
     task->dst = dst;
     task->dst_length = output_size;
     task->cb = cb;
-    plic_irq_register(IRQN_AI_INTERRUPT, cnn_continue, task);
-    cnn_run_dma_input(dma_ch, src, cnn_input_done, task);
+    plic_irq_register(IRQN_AI_INTERRUPT, &cnn_continue, task);
+    cnn_run_dma_input(dma_ch, src, &cnn_input_done, task);
     // while (!g_ai_mem_copy_done_flag)
     //     ;
     g_ai_mem_copy_done_flag = 0;

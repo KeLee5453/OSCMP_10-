@@ -1,6 +1,7 @@
 #include <region_layer.h>
 #include <defs.h>
 // #include <qsort>
+#define LOG(fmt, args...) cprintf(fmt, ##args)
 
 extern void qsort(void *aa, size_t n, size_t es, int (*cmp)(const void *, const void *));
 typedef struct box_t
@@ -559,6 +560,7 @@ static const float softmax_acc[] = {
 
 static inline void activate_array(float *x, const int n, const INPUT_TYPE *input)
 {
+
     for (int i = 0; i < n; ++i)
 #ifdef DEBUG_FLOAT
         x[i] = 1.0f / (1.0f + expf(-input[i]));
@@ -569,6 +571,8 @@ static inline void activate_array(float *x, const int n, const INPUT_TYPE *input
 
 static inline int entry_index(int location, int entry)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     int n = location / (region_layer_l_w * region_layer_l_h);
     int loc = location % (region_layer_l_w * region_layer_l_h);
 
@@ -579,6 +583,8 @@ static inline int entry_index(int location, int entry)
 
 static inline void softmax(const INPUT_TYPE *u8in, int n, int stride, float *output)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     int i;
     float e;
     float sum = 0;
@@ -612,6 +618,8 @@ static inline void softmax(const INPUT_TYPE *u8in, int n, int stride, float *out
 
 static inline void softmax_cpu(const INPUT_TYPE *input, int n, int batch, int batch_offset, int groups, int stride, float *output)
 {
+    LOG("_start %s [region_layer] start run\n", __func__);
+
     int g, b;
 
     for (b = 0; b < batch; ++b)
@@ -622,6 +630,8 @@ static inline void softmax_cpu(const INPUT_TYPE *input, int n, int batch, int ba
 }
 static inline void forward_region_layer(const INPUT_TYPE *u8in, float *output)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     volatile int n, index;
 
     for (index = 0; index < 8750; index++)
@@ -644,6 +654,8 @@ static inline void forward_region_layer(const INPUT_TYPE *u8in, float *output)
 
 static inline void correct_region_boxes(box *boxes)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     int new_w = 0;
     int new_h = 0;
 
@@ -674,6 +686,8 @@ static inline void correct_region_boxes(box *boxes)
 
 static inline box get_region_box(float *x, const float *biases, int n, int index, int i, int j, int w, int h, int stride)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     volatile box b;
 
     b.x = (i + x[index + 0 * stride]) / w;
@@ -685,6 +699,8 @@ static inline box get_region_box(float *x, const float *biases, int n, int index
 
 static inline void get_region_boxes(float *predictions, float **probs, box *boxes)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     for (int i = 0; i < region_layer_l_w * region_layer_l_h; ++i)
     {
         volatile int row = i / region_layer_l_w;
@@ -711,7 +727,7 @@ static inline void get_region_boxes(float *predictions, float **probs, box *boxe
             {
                 int class_index = entry_index(n * region_layer_l_w * region_layer_l_h + i, 5 + j);
                 float prob = scale * predictions[class_index];
-
+                // cprintf("prob = scale * predictions[class_index] :%d \n", prob);
                 probs[index][j] = (prob > region_layer_thresh) ? prob : 0;
                 if (prob > max)
                     max = prob;
@@ -724,6 +740,9 @@ static inline void get_region_boxes(float *predictions, float **probs, box *boxe
 
 static inline int nms_comparator(const void *pa, const void *pb)
 {
+
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     volatile sortable_bbox a = *(sortable_bbox *)pa;
     volatile sortable_bbox b = *(sortable_bbox *)pb;
     volatile float diff = a.probs[a.index][b.classes] - b.probs[b.index][b.classes];
@@ -737,6 +756,8 @@ static inline int nms_comparator(const void *pa, const void *pb)
 
 static inline float overlap(float x1, float w1, float x2, float w2)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     float l1 = x1 - w1 / 2;
     float l2 = x2 - w2 / 2;
     float left = l1 > l2 ? l1 : l2;
@@ -749,6 +770,8 @@ static inline float overlap(float x1, float w1, float x2, float w2)
 
 static inline float box_intersection(box a, box b)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     float w = overlap(a.x, a.w, b.x, b.w);
     float h = overlap(a.y, a.h, b.y, b.h);
 
@@ -759,6 +782,8 @@ static inline float box_intersection(box a, box b)
 
 static inline float box_union(box a, box b)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     float i = box_intersection(a, b);
     float u = a.w * a.h + b.w * b.h - i;
 
@@ -767,11 +792,15 @@ static inline float box_union(box a, box b)
 
 static inline float box_iou(box a, box b)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     return box_intersection(a, b) / box_union(a, b);
 }
 
 static inline void do_nms_sort(box *boxes, float **probs)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     int i, j, k;
     sortable_bbox s[region_layer_boxes];
 
@@ -806,6 +835,8 @@ static inline void do_nms_sort(box *boxes, float **probs)
 
 static inline int max_index(float *a, int n)
 {
+    // LOG("_start %s [region_layer] start run\n", __func__);
+
     int i, max_i = 0;
     float max = a[0];
 
@@ -827,6 +858,8 @@ static float *probs[region_layer_boxes];
 
 void region_layer_cal(INPUT_TYPE *u8in)
 {
+    LOG("_start %s [region_layer] start run\n", __func__);
+
     forward_region_layer(u8in, output);
 
     for (int i = 0; i < region_layer_boxes; i++)
@@ -838,6 +871,8 @@ void region_layer_cal(INPUT_TYPE *u8in)
 
 void region_layer_draw_boxes(callback_draw_box callback)
 {
+    LOG("_start %s [region_layer] start run\n", __func__);
+
     for (int i = 0; i < region_layer_boxes; ++i)
     {
         volatile int classe = max_index(probs[i], region_layer_l_classes);

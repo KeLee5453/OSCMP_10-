@@ -1000,11 +1000,19 @@ void sysctl_disable_irq(void);
  */
 int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select);
 
+// /**
+//  * @brief       Get the time start up to now
+//  *
+//  * @return      The time of microsecond
+//  */
+// uint64_t sysctl_get_time_us(void);
+
 /**
- * @brief       Get the time start up to now
- *
- * @return      The time of microsecond
+ * @brief       Init PLL freqency
+ * @param[in]   pll            The PLL id
+ * @param[in]   pll_freq       The desired frequency in Hz
+
  */
-uint64_t sysctl_get_time_us(void);
+uint32_t sysctl_pll_set_freq(sysctl_pll_t pll, uint32_t pll_freq);
 
 #endif //LAB8_SYSCTL_H

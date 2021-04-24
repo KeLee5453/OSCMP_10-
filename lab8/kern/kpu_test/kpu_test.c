@@ -18,6 +18,8 @@
 #include "cnn.h"
 
 #define CLASS_NUMBER 20
+#define PLL1_OUTPUT_FREQ 400000000UL
+
 cnn_task_t task;
 uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
 volatile uint8_t g_ai_done_flag = 0;
@@ -47,6 +49,7 @@ static void print_class(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2,
 
 int kpu_test(void)
 {
+    sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
     sysctl_clock_enable(SYSCTL_CLOCK_AI);
     cprintf("set clock succeed\n");
     /*---------------加载图片到ai_buf-----------------*/
@@ -69,8 +72,8 @@ int kpu_test(void)
     cprintf("task_init succeed\n");
     cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
     cprintf("cnn_run succeed\n");
-    while (!g_ai_done_flag)
-        ;
+    // while (!g_ai_done_flag)
+    //     ;
     g_ai_done_flag = 0;
 
     region_layer_cal((uint8_t *)image_dst);
