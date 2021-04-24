@@ -160,7 +160,8 @@ void interrupt_handler(struct trapframe *tf)
         cprintf("User software interrupt\n");
         break;
     case IRQ_S_EXT:
-        cprintf("Supervisor external interrupt\n");
+        cprintf("User exthernal interrupt\n");
+        trap_in_ext();
         break;
     case IRQ_H_EXT:
         cprintf("Hypervisor software interrupt\n");
@@ -275,8 +276,9 @@ static inline void trap_dispatch(struct trapframe *tf)
 }
 
 extern void dev_intr();
-int trap_in_ext(struct trapframe *tf)
+void trap_in_ext()
 {
+    cprintf("[ext-trap]\n");
     volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
     uint32_t irq = *hart0m_claim;
     switch (irq)
@@ -290,7 +292,6 @@ int trap_in_ext(struct trapframe *tf)
         break;
     case IRQN_AI_INTERRUPT:
     case IRQN_DMA5_INTERRUPT: //AI
-
         cprintf("[ext-trap]: %d", irq);
         plic_instance[irq].callback(plic_instance[irq].ctx);
         break;
@@ -346,5 +347,4 @@ void idt_init(void)
     /* Set the exception vector address */
     write_csr(stvec, &__alltraps);
     //设置外部中断跳转函数
-    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
 }

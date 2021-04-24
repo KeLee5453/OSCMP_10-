@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <sbi.h>
 #include <io.h>
+#include <trap.h>
 
 #define STDIN_BUFSIZE 4096
 
@@ -132,12 +133,17 @@ stdin_device_init(struct device *dev)
 
 void dev_intr()
 {
+    volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+    uint32_t irq = *hart0m_claim;
     volatile uint32_t *reg = (volatile uint32_t *)UARTHS_DATA_REG;
     uint32_t c;
-
-    c = *reg;
-    if (c <= 0xFF)
-        dev_stdin_write(c);
+    if (irq == 0x21)
+    {
+        c = *reg;
+        if (c <= 0xFF)
+            dev_stdin_write(c);
+    }
+    *hart0m_claim = irq;
 }
 
 void dev_init_stdin(void)
@@ -148,7 +154,7 @@ void dev_init_stdin(void)
         panic("stdin: dev_create_node.\n");
     }
     stdin_device_init(vop_info(node, device));
-
+    sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
     int ret;
     if ((ret = vfs_add_dev("stdin", node, 0)) != 0)
     {
