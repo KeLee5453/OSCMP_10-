@@ -155,6 +155,7 @@ void dev_init_stdin(void)
     }
     stdin_device_init(vop_info(node, device));
     sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
+
     int ret;
     if ((ret = vfs_add_dev("stdin", node, 0)) != 0)
     {

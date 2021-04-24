@@ -61,7 +61,7 @@ void plicinithart(void)
 
 void plic_irq_register(uint32_t irq, plic_irq_callback_t callback, void *ctx)
 {
-    cprintf("_start %s [cnn] start run\n", __func__);
+    cprintf("_start %s [plic] start run\n", __func__);
     /* Set user callback function */
     plic_instance[irq].callback = callback;
     /* Assign user context */
