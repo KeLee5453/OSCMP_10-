@@ -23,17 +23,21 @@ static wait_queue_t __wait_queue, *wait_queue = &__wait_queue;
 
 void dev_stdin_write(char c)
 {
+
     bool intr_flag;
     if (c != '\0')
     {
         local_intr_save(intr_flag);
         {
             stdin_buffer[p_wpos % STDIN_BUFSIZE] = c;
+            // cprintf("superviser exthernal interrupt:有问题\n");
+
             if (p_wpos - p_rpos < STDIN_BUFSIZE)
             {
                 p_wpos++;
             }
         }
+
         local_intr_restore(intr_flag);
     }
 }
@@ -133,6 +137,8 @@ stdin_device_init(struct device *dev)
 
 void dev_intr()
 {
+    // cprintf("superviser exthernal interrupt:stdin_write\n");
+
     volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
     uint32_t irq = *hart0m_claim;
     volatile uint32_t *reg = (volatile uint32_t *)UARTHS_DATA_REG;
@@ -154,8 +160,9 @@ void dev_init_stdin(void)
         panic("stdin: dev_create_node.\n");
     }
     stdin_device_init(vop_info(node, device));
-    sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
-
+    // sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
+    // cprintf("[dev_intr]: %x\n", dev_intr);
+    // cprintf("[stdin_buffer:]%x\n", stdin_buffer);
     int ret;
     if ((ret = vfs_add_dev("stdin", node, 0)) != 0)
     {

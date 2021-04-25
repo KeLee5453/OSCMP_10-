@@ -121,6 +121,12 @@ extern struct mm_struct *check_mm_struct;
 
 void interrupt_handler(struct trapframe *tf)
 {
+    int which_dev = 0;
+    if ((which_dev = trap_in_ext(tf)) == 1)
+    {
+        return;
+    }
+
     intptr_t cause = (tf->cause << 1) >> 1;
     switch (cause)
     {
@@ -160,8 +166,8 @@ void interrupt_handler(struct trapframe *tf)
         cprintf("User software interrupt\n");
         break;
     case IRQ_S_EXT:
-        cprintf("User exthernal interrupt\n");
-        trap_in_ext();
+        cprintf("superviser exthernal interrupt\n");
+        // trap_in_ext();
         break;
     case IRQ_H_EXT:
         cprintf("Hypervisor software interrupt\n");
@@ -276,29 +282,46 @@ static inline void trap_dispatch(struct trapframe *tf)
 }
 
 extern void dev_intr();
-void trap_in_ext()
+int trap_in_ext(struct trapframe *tf)
 {
-    cprintf("[ext-trap]\n");
-    volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
-    uint32_t irq = *hart0m_claim;
-    switch (irq)
+    if (0x8000000000000005L == tf->cause)
     {
-
-    case IRQN_UARTHS_INTERRUPT:
-        dev_intr();
-        break;
-    case IRQN_DMA0_INTERRUPT:
-        cprintf("IRQN_DMA0_INTERRUPT");
-        break;
-    case IRQN_AI_INTERRUPT:
-    case IRQN_DMA5_INTERRUPT: //AI
-        cprintf("[ext-trap]: %d", irq);
-        plic_instance[irq].callback(plic_instance[irq].ctx);
-        break;
-    default:
-        break;
+        return 2;
     }
-    *hart0m_claim = irq;
+    cprintf("[ext-trap]\n");
+    if (0x8000000000000001L == tf->cause && 9 == tf->tval)
+    {
+        volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+        uint32_t irq = *hart0m_claim;
+        switch (irq)
+        {
+
+        case IRQN_UARTHS_INTERRUPT:
+            dev_intr();
+            break;
+        case IRQN_DMA0_INTERRUPT:
+            cprintf("IRQN_DMA0_INTERRUPT");
+            break;
+        case IRQN_AI_INTERRUPT:
+        case IRQN_DMA5_INTERRUPT: //AI
+            cprintf("[ext-trap]: %d", irq);
+            plic_instance[irq].callback(plic_instance[irq].ctx);
+            break;
+        default:
+            break;
+        }
+        *hart0m_claim = irq;
+        write_csr(sip, read_csr(sip) & ~2);
+        sbi_set_mie();
+        return 1;
+    }
+
+    else
+    {
+        cprintf("\nscause %p\n", tf->cause);
+        cprintf("sepc=%p stval=%p\n", tf->epc, tf->tval);
+        return 0;
+    }
 }
 
 /* *

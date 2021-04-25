@@ -24,8 +24,8 @@
 
 void plic_init(void)
 {
-    // writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));
-    // writel(1, PLIC_BASE_ADDR + IRQN_DMA0_INTERRUPT * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));
+    writel(1, PLIC_BASE_ADDR + IRQN_DMA0_INTERRUPT * sizeof(uint32_t));
     // writel(1, PLIC_BASE_ADDR + IRQN_DMA5_INTERRUPT * sizeof(uint32_t));
     // writel(1, PLIC_BASE_ADDR + IRQN_AI_INTERRUPT * sizeof(uint32_t));
 
@@ -50,9 +50,11 @@ void plicinithart(void)
     *(uint32 *)PLIC_SPRIORITY(hart) = 0;
 #else
     uint32_t *hart_m_enable = (uint32_t *)PLIC_MENABLE;
-    *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_UARTHS_INTERRUPT);
+    cprintf("hart_m_enable  old:%x\n", readl(hart_m_enable));
+    *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_DMA0_INTERRUPT);
+    cprintf("hart_m_enable:%x\n", readl(hart_m_enable));
     uint32_t *hart0_m_int_enable_hi = hart_m_enable + 1;
-    *(hart0_m_int_enable_hi) = readl(hart0_m_int_enable_hi) | (1 << (IRQN_DMA0_INTERRUPT % 32));
+    *(hart0_m_int_enable_hi) = readl(hart0_m_int_enable_hi) | (1 << (IRQN_UARTHS_INTERRUPT % 32));
 #endif
 #ifdef DEBUG
     printf("plicinithart\n");
