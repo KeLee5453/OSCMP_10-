@@ -139,17 +139,17 @@ void dev_intr()
 {
     // cprintf("superviser exthernal interrupt:stdin_write\n");
 
-    volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
-    uint32_t irq = *hart0m_claim;
+    // volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+    // uint32_t irq = *hart0m_claim;
     volatile uint32_t *reg = (volatile uint32_t *)UARTHS_DATA_REG;
     uint32_t c;
-    if (irq == 0x21)
-    {
-        c = *reg;
-        if (c <= 0xFF)
-            dev_stdin_write(c);
-    }
-    *hart0m_claim = irq;
+    // if (irq == 0x21)
+    // {
+    c = *reg;
+    if (c <= 0xFF)
+        dev_stdin_write(c);
+    // }
+    // *hart0m_claim = irq;
 }
 
 void dev_init_stdin(void)
@@ -160,8 +160,8 @@ void dev_init_stdin(void)
         panic("stdin: dev_create_node.\n");
     }
     stdin_device_init(vop_info(node, device));
-    // sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
-    // cprintf("[dev_intr]: %x\n", dev_intr);
+    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
+    cprintf("[dev_intr]: %x\n", trap_in_ext);
     // cprintf("[stdin_buffer:]%x\n", stdin_buffer);
     int ret;
     if ((ret = vfs_add_dev("stdin", node, 0)) != 0)

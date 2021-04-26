@@ -12,6 +12,7 @@
 #include "util.h"
 #include "picojpeg.h"
 #include "picojpeg_util.h"
+#include "incbin.h"
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #define INCBIN_PREFIX
 #include "region_layer.h"
@@ -19,6 +20,8 @@
 
 #define CLASS_NUMBER 20
 #define PLL1_OUTPUT_FREQ 400000000UL
+
+INCBIN(model, "../kpu_test/yolo.kmodel");
 
 cnn_task_t task;
 uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
@@ -67,17 +70,26 @@ int kpu_test(void)
     }
     cprintf("g_ai_buf addr:  %x\n", g_ai_buf);
     /*---------------加载图片到ai_buf-----------------*/
-
+    //存在访存问题
     cnn_task_init(&task);
-    cprintf("task_init succeed\n");
-    cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
-    cprintf("cnn_run succeed\n");
-    // while (!g_ai_done_flag)
-    //     ;
-    g_ai_done_flag = 0;
+    // cprintf("task_init succeed\n");
+    // cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
+    // cprintf("cnn_run succeed\n");
+    // // while (!g_ai_done_flag)
+    // //     ;
+    // g_ai_done_flag = 0;
 
-    region_layer_cal((uint8_t *)image_dst);
-    region_layer_draw_boxes(print_class);
+    // region_layer_cal((uint8_t *)image_dst);
+    // region_layer_draw_boxes(print_class);
 
+    // uint8_t *model_data_align = model_data;
+    // if (kpu_load_kmodel(&task, model_data_align) != 0)
+    // {
+    //     cprintf("\nmodel init error\n");
+    //     while (1)
+    //     {
+    //         cprintf("kmodel is loading...\n");
+    //     };
+    // }
     return 0;
 }

@@ -121,11 +121,11 @@ extern struct mm_struct *check_mm_struct;
 
 void interrupt_handler(struct trapframe *tf)
 {
-    int which_dev = 0;
-    if ((which_dev = trap_in_ext(tf)) == 1)
-    {
-        return;
-    }
+    // int which_dev = 0;
+    // if ((which_dev = trap_in_ext(tf)) == 1)
+    // {
+    //     return;
+    // }
 
     intptr_t cause = (tf->cause << 1) >> 1;
     switch (cause)
@@ -282,46 +282,50 @@ static inline void trap_dispatch(struct trapframe *tf)
 }
 
 extern void dev_intr();
-int trap_in_ext(struct trapframe *tf)
+void trap_in_ext()
+
 {
-    if (0x8000000000000005L == tf->cause)
+    // intptr_t cause = read_csr(scause);
+    // // if (0x8000000000000005L == cause)
+    // // {
+    // //     return;
+    // // }
+    // // cprintf("[ext-trap]\n");
+    // if (0x1 == cause && 0x9 == (intptr_t)read_csr(stval))
+    // {
+    // cprintf("[ext-trap]\n");
+    volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+    uint32_t irq = *hart0m_claim;
+    switch (irq)
     {
-        return 2;
-    }
-    cprintf("[ext-trap]\n");
-    if (0x8000000000000001L == tf->cause && 9 == tf->tval)
-    {
-        volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
-        uint32_t irq = *hart0m_claim;
-        switch (irq)
-        {
 
-        case IRQN_UARTHS_INTERRUPT:
-            dev_intr();
-            break;
-        case IRQN_DMA0_INTERRUPT:
-            cprintf("IRQN_DMA0_INTERRUPT");
-            break;
-        case IRQN_AI_INTERRUPT:
-        case IRQN_DMA5_INTERRUPT: //AI
-            cprintf("[ext-trap]: %d", irq);
-            plic_instance[irq].callback(plic_instance[irq].ctx);
-            break;
-        default:
-            break;
-        }
-        *hart0m_claim = irq;
-        write_csr(sip, read_csr(sip) & ~2);
-        sbi_set_mie();
-        return 1;
+    case IRQN_UARTHS_INTERRUPT:
+        // cprintf("[ext-trap]: %d", irq);
+        dev_intr();
+        break;
+    case IRQN_DMA0_INTERRUPT:
+        cprintf("IRQN_DMA0_INTERRUPT");
+        break;
+    case IRQN_AI_INTERRUPT:
+    case IRQN_DMA5_INTERRUPT: //AI
+        cprintf("[ext-trap]: %d", irq);
+        plic_instance[irq].callback(plic_instance[irq].ctx);
+        break;
+    default:
+        break;
     }
+    *hart0m_claim = irq;
+    // write_csr(sip, read_csr(sip) & ~2);
+    // sbi_set_mie();
+    return;
+    // }
 
-    else
-    {
-        cprintf("\nscause %p\n", tf->cause);
-        cprintf("sepc=%p stval=%p\n", tf->epc, tf->tval);
-        return 0;
-    }
+    // else
+    // {
+    //     cprintf("\nscause %p\n", tf->cause);
+    //     cprintf("sepc=%p stval=%p\n", tf->epc, tf->tval);
+    //     return;
+    // }
 }
 
 /* *
