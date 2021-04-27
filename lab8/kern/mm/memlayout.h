@@ -49,20 +49,20 @@
 /* All physical memory mapped at this address */
 #define KERNBASE 0xFFFFFFFFC0020000 // = 0x80020000(物理内存里内核的起始位置, KERN_BEGIN_PADDR) + 0xFFFFFFFF40000000(偏移量, PHYSICAL_MEMORY_OFFSET)
 //把原有内存映射到虚拟内存空间的最后一页
-#define KMEMSIZE 0x7E0000 // the maximum amount of physical memory
+#define KMEMSIZE 0x5E0000 // the maximum amount of physical memory
 // 0x7E0000 = 0x800000 - 0x20000
 // k210的RAM为 0x80000000到0x80600000, 6MiB, 0x80000000到0x80020000被RustSBI占用
 //kpu的RAM为 0x80600000 - 0x80800000 2MiB
 #define KERNTOP (KERNBASE + KMEMSIZE) // 0x80800000对应的虚拟地址
 
-#define PHYSICAL_MEMORY_END 0x80800000
+#define PHYSICAL_MEMORY_END 0x805fffff
 #define PHYSICAL_MEMORY_OFFSET 0xFFFFFFFF40000000
 #define KERNEL_BEGIN_PADDR 0x80020000
 #define KERNEL_BEGIN_VADDR 0xFFFFFFFFC0020000
 
-#define IO_BEGIN_PADDR (0x30000000U)
-#define IOSIZE (0x30000000U)
-#define IOTOP (IO_BEGIN_PADDR + IOSIZE)
+// #define IO_BEGIN_PADDR (0x30000000U)
+// #define IOSIZE (0x30000000U)
+// #define IOTOP (IO_BEGIN_PADDR + IOSIZE)
 
 #define KSTACKPAGE 4                     // # of pages in kernel stack
 #define KSTACKSIZE (KSTACKPAGE * PGSIZE) // sizeof kernel stack

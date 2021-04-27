@@ -21,7 +21,7 @@
 #define CLASS_NUMBER 20
 #define PLL1_OUTPUT_FREQ 400000000UL
 
-INCBIN(model, "../kpu_test/yolo.kmodel");
+// INCBIN(model, "../kpu_test/yolo.kmodel");
 
 cnn_task_t task;
 uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
@@ -68,9 +68,10 @@ int kpu_test(void)
     {
         g_ai_buf[i] = *(jpeg->img_data + i);
     }
-    cprintf("g_ai_buf addr:  %x\n", g_ai_buf);
+    cprintf("g_ai_buf addr:  %16x\n", g_ai_buf);
     /*---------------加载图片到ai_buf-----------------*/
     //存在访存问题
+    cprintf("task addr : 0x%16x", task);
     cnn_task_init(&task);
     // cprintf("task_init succeed\n");
     // cnn_run(&task, 5, g_ai_buf, image_dst, ai_done);
