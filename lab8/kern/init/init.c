@@ -59,7 +59,7 @@ int kern_init(void)
     //LAB1: CAHLLENGE 1 If you try to do it, uncomment lab1_switch_test()
     // user/kernel mode switch test
     //lab1_switch_test();
-    // kpu_test();
+    kpu_test();
 
     cpu_idle(); // run idle process
 }
