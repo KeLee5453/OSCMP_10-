@@ -86,6 +86,11 @@ sys_lab6_set_priority(uint64_t priority)
     syscall(SYS_lab6_set_priority, priority);
 }
 
+void 
+sys_kpu_run(char jpg_data[],uint32_t jpg_size)
+{
+    syscall(SYS_kpu_run,jpg_data,jpg_size);
+}
 int
 sys_sleep(int64_t time) {
     return syscall(SYS_sleep, time);

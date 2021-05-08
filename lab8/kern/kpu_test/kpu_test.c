@@ -26,7 +26,7 @@
 cnn_task_t task;
 uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
 volatile uint8_t g_ai_done_flag = 0;
- void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
+void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
 
 uint8_t g_ai_buf[320 * 240 * 3] __attribute__((aligned(128)));
 

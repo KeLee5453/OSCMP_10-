@@ -31,6 +31,7 @@
 #define SYS_dup             130
 /* OLNY FOR LAB6 */
 #define SYS_lab6_set_priority 255
+#define SYS_kpu_run         254
 
 /* SYS_fork flags */
 #define CLONE_VM            0x00000100  // set if VM shared between processes

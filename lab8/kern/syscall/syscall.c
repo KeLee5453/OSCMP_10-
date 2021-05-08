@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <clock.h>
 #include <sysfile.h>
+#include <kpu_test.h>
 static int
 sys_exit(uint64_t arg[]) {
     int error_code = (int)arg[0];
@@ -70,6 +71,8 @@ static int sys_lab6_set_priority(uint64_t arg[]){
     lab6_set_priority(priority);
     return 0;
 }
+
+
 static int
 sys_sleep(uint64_t arg[]) {
     unsigned int time = (unsigned int)arg[0];
@@ -145,6 +148,15 @@ sys_dup(uint64_t arg[]) {
     int fd2 = (int)arg[1];
     return sysfile_dup(fd1, fd2);
 }
+
+static int 
+sys_kpu_run(uint64_t arg[]){
+    char* jpg_data=(char *)arg[0];
+    uint32_t jpg_size=(uint32_t)arg[1];
+    kpu_test(jpg_data,jpg_size);
+    return 0;
+}
+
 static int (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -168,7 +180,7 @@ static int (*syscalls[])(uint64_t arg[]) = {
     [SYS_getcwd]            sys_getcwd,
     [SYS_getdirentry]       sys_getdirentry,
     [SYS_dup]               sys_dup,
-    
+    [SYS_kpu_run]           sys_kpu_run,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

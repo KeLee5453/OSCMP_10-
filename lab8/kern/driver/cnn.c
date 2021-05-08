@@ -155,29 +155,29 @@ int cnn_print_config(cnn_config_t conf, print_cb pout)
 
     return 0;
 }
-extern void ai_done(void*ctx);
+extern void ai_done(void *ctx);
 int cnn_run_all_done(void *_task)
 {
     // LOG("_start %s [cnn] all done\n", __func__);
     cnn_task_t *task = (cnn_task_t *)_task;
     // task->cb(task);
-           switch (task->cb)
-       {
-       case cnn_continue_flag:
-           cnn_continue( task);
-           break;
-       case cnn_input_done_flag:
-            cnn_input_done(task);
-            break;
-        case cnn_run_all_done_flag:
-            cnn_run_all_done(task);
-            break;
-        case ai_done_flag:
-            ai_done(task);
-       default:
-            cprintf("invalid task->cb\n");
-           break;
-       }
+    switch (task->cb)
+    {
+    case cnn_continue_flag:
+        cnn_continue(task);
+        break;
+    case cnn_input_done_flag:
+        cnn_input_done(task);
+        break;
+    case cnn_run_all_done_flag:
+        cnn_run_all_done(task);
+        break;
+    case ai_done_flag:
+        ai_done(task);
+    default:
+        cprintf("invalid task->cb\n");
+        break;
+    }
 
     // LOG("_end %s\n", __func__);
     return 0;
@@ -296,7 +296,7 @@ int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, int cb, void
 }
 volatile uint8_t g_ai_mem_copy_done_flag = 0;
 
- int cnn_input_done(void *ctx)
+int cnn_input_done(void *ctx)
 {
     // LOG("%s\n", __func__);
     g_ai_mem_copy_done_flag = 1;

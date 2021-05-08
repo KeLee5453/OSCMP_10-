@@ -871,7 +871,7 @@ void region_layer_cal(INPUT_TYPE *u8in)
 
 void region_layer_draw_boxes(callback_draw_box callback)
 {
-    LOG("_start %s [region_layer] start run\n", __func__);
+    // LOG("_start %s [region_layer] start run\n", __func__);
 
     for (int i = 0; i < region_layer_boxes; ++i)
     {

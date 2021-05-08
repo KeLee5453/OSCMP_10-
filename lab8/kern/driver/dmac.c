@@ -30,8 +30,7 @@
 #else
 #define LOG(fmt, args...) cprintf(fmt, ##args)
 #endif
-static wait_queue_t __wait_queue, *wait_queue =
-                                      &__wait_queue;
+
 volatile dmac_t *const dmac = (dmac_t *)DMAC_BASE_ADDR;
 
 static int is_memory(uintptr_t address)
@@ -619,7 +618,7 @@ void dmac_init(void)
     tmp &= ~0xf;
     writeq(tmp, &dmac->chen);
     /* disable all channel before configure */
-    wait_queue_init(wait_queue);
+    
     dmac_enable();
 
     cprintf("dmac enabled success\n");
@@ -793,13 +792,9 @@ void dmac_wait_idle(dmac_channel_number_t channel_num)
 {
     LOG("_start %s [dmac] start run\n", __func__);
 
-    bool intr_flag;
     while (!dmac_is_idle(channel_num))
     {
-        // local_intr_save(intr_flag);
-        // wait_t __wait, *wait = &__wait;
-        // wait_current_set(wait_queue, wait, WT_DMA);
-        // local_intr_restore(intr_flag);
+
     };
     dmac_chanel_interrupt_clear(channel_num); /* clear interrupt */
 }
