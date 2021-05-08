@@ -129,8 +129,16 @@
 #define IRQN_DMA5_INTERRUPT 32
 #define IRQN_DMA0_INTERRUPT 27
 #define IRQN_AI_INTERRUPT 25
-#define IRQN_MAX 4
+#define IRQN_MAX 65
 #endif
+
+int plic_callback_flag;
+#define cnn_input_done_flag 1
+#define cnn_continue_flag 2
+#define cnn_run_all_done_flag 3
+#define ai_done_flag 4
+// void *_task;
+
 
 /**
  * @brief       Definitions for the interrupt callbacks
@@ -158,7 +166,7 @@ static plic_instance_t plic_instance[IRQN_MAX];
  *     - 0      Success
  *     - Other  Fail
  */
-void plic_irq_register(uint32_t irq, plic_irq_callback_t callback, void *ctx);
+void plic_irq_register(uint32_t irq,int callback_flag /*plic_irq_callback_t callback*/, void *ctx);
 
 void plic_init(void);
 

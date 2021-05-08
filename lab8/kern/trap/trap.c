@@ -19,6 +19,8 @@
 #include <proc.h>
 #include <plic.h>
 #include <io.h>
+#include <cnn.h>
+#include <dmac.h>
 #define TICK_NUM 2
 
 static void print_ticks()
@@ -282,18 +284,13 @@ static inline void trap_dispatch(struct trapframe *tf)
 }
 
 extern void dev_intr();
+extern int cnn_run_all_done(void *_task);
+extern int cnn_input_done(void *ctx);
+extern void ai_done(void *ctx);
 void trap_in_ext()
 
 {
-    // intptr_t cause = read_csr(scause);
-    // // if (0x8000000000000005L == cause)
-    // // {
-    // //     return;
-    // // }
-    // // cprintf("[ext-trap]\n");
-    // if (0x1 == cause && 0x9 == (intptr_t)read_csr(stval))
-    // {
-    // cprintf("[ext-trap]\n");
+
     volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
     uint32_t irq = *hart0m_claim;
     switch (irq)
@@ -304,28 +301,36 @@ void trap_in_ext()
         dev_intr();
         break;
     case IRQN_DMA0_INTERRUPT:
-        cprintf("IRQN_DMA0_INTERRUPT");
+        // cprintf("IRQN_DMA0_INTERRUPT");
         break;
     case IRQN_AI_INTERRUPT:
     case IRQN_DMA5_INTERRUPT: //AI
-        cprintf("[ext-trap]: %d", irq);
-        plic_instance[irq].callback(plic_instance[irq].ctx);
+    dmac_chanel_interrupt_clear(DMAC_CHANNEL5);
+    // cprintf("[ext-trap]: %d", irq);
+       switch (plic_callback_flag)
+       {
+       case cnn_continue_flag:
+           cnn_continue( plic_instance[irq].ctx);
+           break;
+       case cnn_input_done_flag:
+            cnn_input_done( plic_instance[irq].ctx);
+            break;
+        case cnn_run_all_done_flag:
+            cnn_run_all_done(plic_instance[irq].ctx);
+            break;
+        case ai_done_flag:
+            ai_done(plic_instance[irq].ctx);
+       default:
+           break;
+       }
         break;
     default:
         break;
     }
     *hart0m_claim = irq;
-    // write_csr(sip, read_csr(sip) & ~2);
-    // sbi_set_mie();
-    return;
-    // }
 
-    // else
-    // {
-    //     cprintf("\nscause %p\n", tf->cause);
-    //     cprintf("sepc=%p stval=%p\n", tf->epc, tf->tval);
-    //     return;
-    // }
+    return;
+
 }
 
 /* *
@@ -374,4 +379,6 @@ void idt_init(void)
     /* Set the exception vector address */
     write_csr(stvec, &__alltraps);
     //设置外部中断跳转函数
+    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
+
 }

@@ -155,21 +155,40 @@ int cnn_print_config(cnn_config_t conf, print_cb pout)
 
     return 0;
 }
+extern void ai_done(void*ctx);
 int cnn_run_all_done(void *_task)
 {
-    LOG("_start %s [cnn] all done\n", __func__);
+    // LOG("_start %s [cnn] all done\n", __func__);
     cnn_task_t *task = (cnn_task_t *)_task;
-    task->cb(task);
-    LOG("_end %s\n", __func__);
+    // task->cb(task);
+           switch (task->cb)
+       {
+       case cnn_continue_flag:
+           cnn_continue( task);
+           break;
+       case cnn_input_done_flag:
+            cnn_input_done(task);
+            break;
+        case cnn_run_all_done_flag:
+            cnn_run_all_done(task);
+            break;
+        case ai_done_flag:
+            ai_done(task);
+       default:
+            cprintf("invalid task->cb\n");
+           break;
+       }
+
+    // LOG("_end %s\n", __func__);
     return 0;
 }
 int cnn_continue(void *_task)
 {
-    LOG("_start %s\n", __func__);
+    // LOG("_start %s\n", __func__);
     cnn_task_t *task = (cnn_task_t *)_task;
     int layer_burst_size = 12;
     uint64_t int_status = cnn->interrupt_status.reg;
-    LOG("[cnn] continued %d layers more, status:%ld\n", task->length, int_status);
+    // LOG("[cnn] continued %d layers more, status:%ld\n", task->length, int_status);
     cnn->interrupt_clear.data = (cnn_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
@@ -181,7 +200,7 @@ int cnn_continue(void *_task)
     }
     if (task->length <= layer_burst_size)
     {
-        LOG("[cnn] last push\n");
+        // LOG("[cnn] last push\n");
         for (uint32_t i = 0; i < task->length; i++)
         {
             cnn->layer_argument_fifo = task->layers[i].interrupt_enabe.reg;
@@ -198,11 +217,11 @@ int cnn_continue(void *_task)
             cnn->layer_argument_fifo = task->layers[i].dma_parameter.reg;
         }
         task->length = 0;
-        LOG("[cnn] all layers pushed\n");
+        // LOG("[cnn] all layers pushed\n");
     }
     else
     {
-        LOG("[cnn] mid push\n");
+        // LOG("[cnn] mid push\n");
 
         for (uint32_t i = 0; i < layer_burst_size; i++)
         {
@@ -222,7 +241,7 @@ int cnn_continue(void *_task)
         task->layers += layer_burst_size;
         task->length -= layer_burst_size;
     }
-    LOG("_end %s [cnn] exit with %d layers more\n", __func__, task->length);
+    // LOG("_end %s [cnn] exit with %d layers more\n", __func__, task->length);
     return 0;
 }
 
@@ -240,32 +259,33 @@ int cnn_run_dma_input_done_push_layers(void *_task)
 
     cnn_layer_argument_t *last_layer = &task->layers[task->length - 1];
 
-    cnn_run_dma_output(task->dma_ch, task->dst, last_layer->dma_parameter.data.dma_total_byte + 1, cnn_run_all_done, task);
+    cnn_run_dma_output(task->dma_ch, task->dst, last_layer->dma_parameter.data.dma_total_byte + 1, cnn_run_all_done_flag, task);
     cnn->interrupt_mask.reg = 7;
     LOG("%s task length is %d\n", __func__, task->length);
     cnn_continue(task);
     LOG("D cnn_continue flowing\n");
-    cnn->interrupt_mask.data = (cnn_config_interrupt_t){
-        .calc_done_int = 0,
-        .layer_cfg_almost_empty_int = 0,
-        .layer_cfg_almost_full_int = 1};
+    // cnn->interrupt_mask.data = (cnn_config_interrupt_t){
+    //     .calc_done_int = 0,
+    //     .layer_cfg_almost_empty_int = 0,
+    //     .layer_cfg_almost_full_int = 1};
     LOG("_end %s\n", __func__);
     return 0;
 }
 
-void cnn_run_dma_input(uint32_t dma_ch, void *src, plic_irq_callback_t cb, void *_task)
+void cnn_run_dma_input(uint32_t dma_ch, void *src, int cb, void *_task)
 {
     LOG("_start %s [cnn] start run\n", __func__);
     cnn_task_t *task = _task;
     cnn_layer_argument_t *first_layer = &task->layers[0];
     uint64_t input_size = first_layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (first_layer->image_channel_num.data.i_ch_num + 1);
     plic_irq_register(IRQN_DMA0_INTERRUPT + dma_ch, cb, _task);
+    dmac_enable_channel_interrupt(DMAC_CHANNEL5);
     dmac_set_single_mode(dma_ch, (void *)src, (void *)(AI_IO_BASE_ADDR), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
                          DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
     LOG("_end %s [cnn] end run\n", __func__);
 }
 
-int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, plic_irq_callback_t cb, void *_task)
+int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, int cb, void *_task)
 {
     LOG("_start %s [cnn] start run\n", __func__);
     sysctl_dma_select(dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
@@ -276,13 +296,13 @@ int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, plic_irq_cal
 }
 volatile uint8_t g_ai_mem_copy_done_flag = 0;
 
-static int cnn_input_done(void *ctx)
+ int cnn_input_done(void *ctx)
 {
-    LOG("%s\n", __func__);
+    // LOG("%s\n", __func__);
     g_ai_mem_copy_done_flag = 1;
     return 0;
 }
-int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, plic_irq_callback_t cb)
+int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, int cb)
 {
     LOG("_start %s [cnn] start run\n", __func__);
     cnn_layer_argument_t *last_layer = &task->layers[task->length - 1];
@@ -299,8 +319,8 @@ int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, plic_irq_callbac
     task->dst = dst;
     task->dst_length = output_size;
     task->cb = cb;
-    plic_irq_register(IRQN_AI_INTERRUPT, &cnn_continue, task);
-    cnn_run_dma_input(dma_ch, src, &cnn_input_done, task);
+    plic_irq_register(IRQN_AI_INTERRUPT, cnn_continue_flag, task);
+    cnn_run_dma_input(dma_ch, src, cnn_input_done_flag, task);
     // while (!g_ai_mem_copy_done_flag)
     //     ;
     g_ai_mem_copy_done_flag = 0;

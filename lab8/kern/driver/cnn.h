@@ -319,17 +319,17 @@ typedef struct
     int dma_ch;
     uint64_t *dst;
     uint32_t dst_length;
-    plic_irq_callback_t cb;
+    int cb;
 } cnn_task_t;
 
 int cnn_run_push_layers(void *_task);
-int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, plic_irq_callback_t cb, void *_task);
+int cnn_run_dma_output(uint32_t dma_ch, void *dst, uint32_t length, int cb, void *_task);
 
 cnn_task_t *cnn_task_init(cnn_task_t *task);
-int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, plic_irq_callback_t cb);
+int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, int cb);
 
 void cnn_set_irq(void *ctx);
 int cnn_continue(void *_task);
-void cnn_run_dma_input(uint32_t dma_ch, void *src, plic_irq_callback_t cb, void *_task);
-
+void cnn_run_dma_input(uint32_t dma_ch, void *src, int cb, void *_task);
+int cnn_input_done(void *ctx);
 #endif

@@ -271,7 +271,7 @@ void dmac_enable_common_interrupt_signal(void)
     writeq(intsignal.data, &dmac->com_intsignal_en);
 }
 
-static void dmac_enable_channel_interrupt(dmac_channel_number_t channel_num)
+ void dmac_enable_channel_interrupt(dmac_channel_number_t channel_num)
 {
     LOG("_start %s [dmac] start run\n", __func__);
 
@@ -286,7 +286,7 @@ void dmac_disable_channel_interrupt(dmac_channel_number_t channel_num)
     writeq(0, &dmac->channel[channel_num].intstatus_en);
 }
 
-static void dmac_chanel_interrupt_clear(dmac_channel_number_t channel_num)
+ void dmac_chanel_interrupt_clear(dmac_channel_number_t channel_num)
 {
     LOG("_start %s [dmac] start run\n", __func__);
 
@@ -582,17 +582,16 @@ void dmac_init(void)
     dmac_cfg_u_t dmac_cfg;
     dmac_reset_u_t dmac_reset;
     cprintf("start initing dmac\n");
-    // int freq = sysctl_clock_get_freq(SYSCTL_CLOCK_DMA);
-    // cprintf("SYSCTL_CLOCK_DMA %d\n", freq);
+    int freq = sysctl_clock_get_freq(SYSCTL_CLOCK_DMA);
+    cprintf("SYSCTL_CLOCK_DMA %d\n", freq);
     sysctl_clock_enable(SYSCTL_CLOCK_DMA);
     cprintf("enable sysctl clock dma\n");
     dmac_reset.data = readq(&dmac->reset);
     dmac_reset.reset.rst = 1;
-    cprintf("enable sysctl clock dma\n");
     //dmac_reset.data = dmac->reset;//readq(&dmac->reset);
     dmac_reset.reset.rst = 1;
     cprintf("try write dma controler %d \n", dmac->reset);
-    //writeq(dmac_reset.data, &dmac->reset);
+    writeq(dmac_reset.data, &dmac->reset);
     while (dmac_reset.reset.rst)
         dmac_reset.data = readq(&dmac->reset);
     cprintf("reset dmac ok.\n");

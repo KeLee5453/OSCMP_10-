@@ -160,8 +160,7 @@ void dev_init_stdin(void)
         panic("stdin: dev_create_node.\n");
     }
     stdin_device_init(vop_info(node, device));
-    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
-    cprintf("[dev_intr]: %x\n", trap_in_ext);
+    // cprintf("[dev_intr]: %x\n", trap_in_ext);
     // cprintf("[stdin_buffer:]%x\n", stdin_buffer);
     int ret;
     if ((ret = vfs_add_dev("stdin", node, 0)) != 0)
