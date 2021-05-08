@@ -168,6 +168,7 @@ static int (*syscalls[])(uint64_t arg[]) = {
     [SYS_getcwd]            sys_getcwd,
     [SYS_getdirentry]       sys_getdirentry,
     [SYS_dup]               sys_dup,
+    
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))
