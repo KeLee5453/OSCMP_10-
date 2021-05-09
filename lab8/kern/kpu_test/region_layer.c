@@ -614,11 +614,12 @@ static inline void softmax(const INPUT_TYPE *u8in, int n, int stride, float *out
     }
     for (i = 0; i < n; ++i)
         output[i * stride] /= sum;
+    // LOG("_end %s [region_layer] end run\n", __func__);
 }
 
 static inline void softmax_cpu(const INPUT_TYPE *input, int n, int batch, int batch_offset, int groups, int stride, float *output)
 {
-    LOG("_start %s [region_layer] start run\n", __func__);
+    // LOG("_start %s [region_layer] start run\n", __func__);
 
     int g, b;
 
@@ -627,10 +628,11 @@ static inline void softmax_cpu(const INPUT_TYPE *input, int n, int batch, int ba
         for (g = 0; g < groups; ++g)
             softmax(input + b * batch_offset + g, n, stride, output + b * batch_offset + g);
     }
+    // LOG("_end %s [region_layer] end run\n", __func__);
 }
 static inline void forward_region_layer(const INPUT_TYPE *u8in, float *output)
 {
-    // LOG("_start %s [region_layer] start run\n", __func__);
+    LOG("_start %s [region_layer] start run\n", __func__);
 
     volatile int n, index;
 
@@ -650,6 +652,7 @@ static inline void forward_region_layer(const INPUT_TYPE *u8in, float *output)
                 region_layer_outputs / region_layer_l_n,
                 region_layer_l_w * region_layer_l_h,
                 region_layer_l_w * region_layer_l_h, output + index);
+    LOG("_end %s [region_layer] end run\n", __func__);
 }
 
 static inline void correct_region_boxes(box *boxes)
@@ -871,13 +874,13 @@ void region_layer_cal(INPUT_TYPE *u8in)
 
 void region_layer_draw_boxes(callback_draw_box callback)
 {
-    // LOG("_start %s [region_layer] start run\n", __func__);
+    LOG("_start %s [region_layer] start run\n", __func__);
 
     for (int i = 0; i < region_layer_boxes; ++i)
     {
         volatile int classe = max_index(probs[i], region_layer_l_classes);
         volatile float prob = probs[i][classe];
-
+        // cprintf("PROB: %d\n", (int)prob);
         if (prob > region_layer_thresh)
         {
             volatile box *b = boxes + i;
@@ -893,4 +896,5 @@ void region_layer_draw_boxes(callback_draw_box callback)
             callback(x1, y1, x2, y2, classe, prob);
         }
     }
+    LOG("_end %s [region_layer] end run\n", __func__);
 }

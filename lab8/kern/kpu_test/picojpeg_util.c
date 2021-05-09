@@ -483,7 +483,7 @@ jpeg_image_t *pico_jpeg_decode(uint8_t *buf, uint32_t buf_len)
   pjpeg_scan_type_t scan_type;
   cprintf("pjpeg_load_from_file\n");
   uint8_t *img_data = pjpeg_load_from_file(
-      buf, buf_len, &width, &height, &comps, &scan_type, 0, 1, NULL, &err);
+      buf, buf_len, &width, &height, &comps, &scan_type, 0, 0, NULL, &err);
 
   if (img_data == NULL)
   {

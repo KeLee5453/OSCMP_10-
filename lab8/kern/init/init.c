@@ -61,7 +61,7 @@ int kern_init(void)
     // user/kernel mode switch test
     //lab1_switch_test();
     // kpu_test(jpeg_data,sizeof(jpeg_data));
-    // kpu_init();
+    kpu_init();
     cpu_idle(); // run idle process
 }
 

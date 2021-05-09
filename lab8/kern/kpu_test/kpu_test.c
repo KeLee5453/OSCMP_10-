@@ -30,8 +30,6 @@ void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
 
 uint8_t g_ai_buf[320 * 240 * 3] __attribute__((aligned(128)));
 
-extern unsigned char jpeg_data[11485];
-
 #if (CLASS_NUMBER > 1)
 typedef struct
 {
@@ -47,18 +45,25 @@ class_lable_t class_lable[CLASS_NUMBER] = {
 static void print_class(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2,
                         uint32_t class, float prob)
 {
+    cprintf("_start %s [print_class] start run\n", __func__);
+
     cprintf("The class is : %s\n", class_lable[class].str);
 }
 
-int kpu_test(void)
+int kpu_init(void)
 {
     sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
     sysctl_clock_enable(SYSCTL_CLOCK_AI);
-    cprintf("set clock succeed\n");
+    return 0;
+}
+
+void kpu_test(char jpeg_data, uint32_t jpeg_size)
+{
+
     /*---------------加载图片到ai_buf-----------------*/
     // decode jpeg
     cprintf("decoding jpg...\n");
-    jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, sizeof(jpeg_data));
+    jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, jpeg_size);
     // cprintf("decoede use :%ld us\r\n", sysctl_get_time_us() - tm);
     for (uint32_t i = 0; i < 10; i++)
     {
@@ -75,22 +80,14 @@ int kpu_test(void)
     cnn_task_init(&task);
     cprintf("task_init succeed\n");
     cnn_run(&task, 5, g_ai_buf, image_dst, ai_done_flag);
-    cprintf("cnn_run succeed\n");
     // while (!g_ai_done_flag)
     //     ;
+    cprintf("cnn_run succeed\n");
+
     g_ai_done_flag = 0;
 
     region_layer_cal((uint8_t *)image_dst);
     region_layer_draw_boxes(print_class);
 
-    // uint8_t *model_data_align = model_data;
-    // if (kpu_load_kmodel(&task, model_data_align) != 0)
-    // {
-    //     cprintf("\nmodel init error\n");
-    //     while (1)
-    //     {
-    //         cprintf("kmodel is loading...\n");
-    //     };
-    // }
-    return 0;
+    // return;
 }

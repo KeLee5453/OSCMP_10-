@@ -184,11 +184,11 @@ int cnn_run_all_done(void *_task)
 }
 int cnn_continue(void *_task)
 {
-    // LOG("_start %s\n", __func__);
+    LOG("_start %s\n", __func__);
     cnn_task_t *task = (cnn_task_t *)_task;
     int layer_burst_size = 12;
     uint64_t int_status = cnn->interrupt_status.reg;
-    // LOG("[cnn] continued %d layers more, status:%ld\n", task->length, int_status);
+    LOG("[cnn] continued %d layers more, status:%ld\n", task->length, int_status);
     cnn->interrupt_clear.data = (cnn_config_interrupt_t){
         .calc_done_int = 1,
         .layer_cfg_almost_empty_int = 1,
@@ -200,7 +200,7 @@ int cnn_continue(void *_task)
     }
     if (task->length <= layer_burst_size)
     {
-        // LOG("[cnn] last push\n");
+        LOG("[cnn] last push\n");
         for (uint32_t i = 0; i < task->length; i++)
         {
             cnn->layer_argument_fifo = task->layers[i].interrupt_enabe.reg;
@@ -217,11 +217,11 @@ int cnn_continue(void *_task)
             cnn->layer_argument_fifo = task->layers[i].dma_parameter.reg;
         }
         task->length = 0;
-        // LOG("[cnn] all layers pushed\n");
+        LOG("[cnn] all layers pushed\n");
     }
     else
     {
-        // LOG("[cnn] mid push\n");
+        LOG("[cnn] mid push\n");
 
         for (uint32_t i = 0; i < layer_burst_size; i++)
         {
@@ -241,7 +241,7 @@ int cnn_continue(void *_task)
         task->layers += layer_burst_size;
         task->length -= layer_burst_size;
     }
-    // LOG("_end %s [cnn] exit with %d layers more\n", __func__, task->length);
+    LOG("_end %s [cnn] exit with %d layers more\n", __func__, task->length);
     return 0;
 }
 
@@ -264,10 +264,10 @@ int cnn_run_dma_input_done_push_layers(void *_task)
     LOG("%s task length is %d\n", __func__, task->length);
     cnn_continue(task);
     LOG("D cnn_continue flowing\n");
-    // cnn->interrupt_mask.data = (cnn_config_interrupt_t){
-    //     .calc_done_int = 0,
-    //     .layer_cfg_almost_empty_int = 0,
-    //     .layer_cfg_almost_full_int = 1};
+    cnn->interrupt_mask.data = (cnn_config_interrupt_t){
+        .calc_done_int = 0,
+        .layer_cfg_almost_empty_int = 0,
+        .layer_cfg_almost_full_int = 1};
     LOG("_end %s\n", __func__);
     return 0;
 }
