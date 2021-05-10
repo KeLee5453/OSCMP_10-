@@ -963,7 +963,10 @@ unsigned char jpeg_data[11485] = {
 
 int main(void)
 {
-    kpu_run(jpeg_data,sizeof(jpeg_data));
+    kpu_run(jpeg_data, sizeof(jpeg_data));
+    cprintf("kpu run another task\n");
+    kpu_run(jpeg_data, sizeof(jpeg_data));
+
     cprintf("kpu run pass\n");
     return 0;
 }

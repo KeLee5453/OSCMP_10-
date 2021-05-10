@@ -305,24 +305,24 @@ void trap_in_ext()
         break;
     case IRQN_AI_INTERRUPT:
     case IRQN_DMA5_INTERRUPT: //AI
-    dmac_chanel_interrupt_clear(DMAC_CHANNEL5);
-    // cprintf("[ext-trap]: %d", irq);
-       switch (plic_callback_flag)
-       {
-       case cnn_continue_flag:
-           cnn_continue( plic_instance[irq].ctx);
-           break;
-       case cnn_input_done_flag:
-            cnn_input_done( plic_instance[irq].ctx);
+        dmac_chanel_interrupt_clear(DMAC_CHANNEL5);
+        // cprintf("[ext-trap]: %d", irq);
+        switch (plic_callback_flag)
+        {
+        case cnn_continue_flag:
+            cnn_continue(plic_instance[irq].ctx);
+            break;
+        case cnn_input_done_flag:
+            cnn_input_done(plic_instance[irq].ctx);
             break;
         case cnn_run_all_done_flag:
             cnn_run_all_done(plic_instance[irq].ctx);
             break;
         case ai_done_flag:
             ai_done(plic_instance[irq].ctx);
-       default:
-           break;
-       }
+        default:
+            break;
+        }
         break;
     default:
         break;
@@ -330,7 +330,6 @@ void trap_in_ext()
     *hart0m_claim = irq;
 
     return;
-
 }
 
 /* *
@@ -380,5 +379,4 @@ void idt_init(void)
     write_csr(stvec, &__alltraps);
     //设置外部中断跳转函数
     sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
-
 }

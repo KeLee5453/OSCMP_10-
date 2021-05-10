@@ -27,7 +27,7 @@ void plic_init(void)
     writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));
     writel(1, PLIC_BASE_ADDR + IRQN_DMA0_INTERRUPT * sizeof(uint32_t));
     writel(1, PLIC_BASE_ADDR + IRQN_DMA5_INTERRUPT * sizeof(uint32_t));
-    writel(1, PLIC_BASE_ADDR + IRQN_AI_INTERRUPT * sizeof(uint32_t));
+    // writel(1, PLIC_BASE_ADDR + IRQN_AI_INTERRUPT * sizeof(uint32_t));
 
     for (int i = 0; i < IRQN_MAX; i++)
     {
@@ -51,17 +51,17 @@ void plicinithart(void)
 #else
     uint32_t *hart_m_enable = (uint32_t *)PLIC_MENABLE;
     cprintf("hart_m_enable  old:%x\n", readl(hart_m_enable));
-    *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_DMA0_INTERRUPT)|(1<<IRQN_AI_INTERRUPT);
+    *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_DMA0_INTERRUPT) | (1 << IRQN_AI_INTERRUPT);
     cprintf("hart_m_enable:%x\n", readl(hart_m_enable));
     uint32_t *hart0_m_int_enable_hi = hart_m_enable + 1;
-    *(hart0_m_int_enable_hi) = readl(hart0_m_int_enable_hi) | (1 << (IRQN_UARTHS_INTERRUPT % 32))|(1<<(IRQN_DMA5_INTERRUPT%32));
+    *(hart0_m_int_enable_hi) = readl(hart0_m_int_enable_hi) | (1 << (IRQN_UARTHS_INTERRUPT % 32)) | (1 << (IRQN_DMA5_INTERRUPT % 32));
 #endif
 #ifdef DEBUG
     printf("plicinithart\n");
 #endif
 }
 
-void plic_irq_register(uint32_t irq,int callback_flag, void *ctx)
+void plic_irq_register(uint32_t irq, int callback_flag, void *ctx)
 {
     cprintf("_start %s [plic] start run\n", __func__);
     /* Set user callback function */
@@ -69,5 +69,5 @@ void plic_irq_register(uint32_t irq,int callback_flag, void *ctx)
     /* Assign user context */
     plic_instance[irq].ctx = ctx;
 
-    plic_callback_flag=callback_flag;
+    plic_callback_flag = callback_flag;
 }
