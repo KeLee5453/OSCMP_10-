@@ -17,7 +17,7 @@
 #define INCBIN_PREFIX
 #include "region_layer.h"
 #include "cnn.h"
-
+#include <proc.h>
 #define CLASS_NUMBER 20
 #define PLL1_OUTPUT_FREQ 400000000UL
 
@@ -54,6 +54,7 @@ int kpu_init(void)
 {
     sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
     sysctl_clock_enable(SYSCTL_CLOCK_AI);
+
     return 0;
 }
 
@@ -80,8 +81,11 @@ void kpu_test(char jpeg_data, uint32_t jpeg_size)
     cnn_task_init(&task);
     cprintf("task_init succeed\n");
     cnn_run(&task, 5, g_ai_buf, image_dst, ai_done_flag);
-    // while (!g_ai_done_flag)
-    //     ;
+
+    do_sleep(10);
+    ai_done(NULL);
+    while (!g_ai_done_flag)
+        ;
     cprintf("cnn_run succeed\n");
 
     g_ai_done_flag = 0;
@@ -90,4 +94,8 @@ void kpu_test(char jpeg_data, uint32_t jpeg_size)
     region_layer_draw_boxes(print_class);
 
     // return;
+}
+
+int kpu_request(char jpeg_data, uint32_t jpeg_size)
+{
 }
