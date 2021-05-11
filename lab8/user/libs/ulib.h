@@ -29,6 +29,13 @@ void __noreturn __panic(const char *file, int line, const char *fmt, ...);
     case (x):;           \
     }
 
+typedef struct kpu_buff
+{
+    uint64_t totsize;
+    uint64_t jpgsize;
+    int64_t jpgoff;
+    char *jpeg;
+} kpu_buff_t;
 void __noreturn exit(int error_code);
 int fork(void);
 int wait(void);

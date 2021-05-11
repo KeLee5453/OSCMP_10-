@@ -119,10 +119,12 @@ out:
     return ret;
 }
 #include <stdio.h>
+#include <kpu.h>
 int dev_kpuio_taskinit(void *buf, size_t len, int pid);
 /* sysfile_write - write file */
 int sysfile_write(int fd, void *base, size_t len)
 {
+    //cprintf("sysfile_write %p, %d\n", base, len);
     struct mm_struct *mm = current->mm;
     if (len == 0)
     {
@@ -133,18 +135,43 @@ int sysfile_write(int fd, void *base, size_t len)
         return -E_INVAL;
     }
     void *buffer;
+    void* buffer2;
     if ((buffer = kmalloc(IOBUF_SIZE)) == NULL)
     {
         return -E_NO_MEM;
     }
-
+    if ((buffer2 = kmalloc(IOBUF_SIZE)) == NULL)
+    {
+        return -E_NO_MEM;
+    }
     int ret = 0;
     size_t copied = 0, alen;
+    kpu_buff *tmp = base;
     while (len != 0)
     {
         if ((alen = IOBUF_SIZE) > len)
         {
             alen = len;
+        }
+        if (ret == 0 && fd == 2)
+        {   
+            cprintf("offset %d\n", tmp->jpgoff);
+            char* test = (char*)base + tmp->jpgoff;
+            cprintf("%c %c\n", *test, *(test+1));
+            lock_mm(mm);
+            {
+            if (!copy_from_user(mm, buffer2, (char*)base + tmp->jpgoff, alen, 0))
+                {
+                    ret = -E_INVAL;
+                }
+            }
+            unlock_mm(mm);
+            if (ret == 0) {
+                tmp->jpeg = (void*)buffer2;
+                cprintf("jpeg set ok %p\n", tmp->jpeg);
+            }else{
+                cprintf("copy buffer2 fial\n");
+            }
         }
         lock_mm(mm);
         {
@@ -164,8 +191,7 @@ int sysfile_write(int fd, void *base, size_t len)
             }
         }
         if (ret == 0 && fd == 2)
-        {
-
+        {   
             dev_kpuio_taskinit(buffer, alen, current->pid);
             if (alen != 0)
             {
@@ -183,6 +209,7 @@ int sysfile_write(int fd, void *base, size_t len)
 
 out:
     kfree(buffer);
+    kfree(buffer2);
     if (copied != 0)
     {
         return copied;

@@ -34,6 +34,7 @@ kpuio_close(struct device *dev)
 #include<kpu.h>
 kpu_buff* kputaskbase;
 int caller_pid;
+char buffer[4096];
 int
 dev_kpuio_taskinit(void *buf, size_t len, int pid){
     int ret = 0;
@@ -42,15 +43,19 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid){
     {
         //for(int i = 0; i < len; i++)
         cprintf("dev_kpuio_taskinit current pid %d\n", current->pid);
-        if(len != 1){
-            panic("kpuio: task num > 1 error\n");
-            return -E_INVAL;
-        }
+        // if(len != 1){
+        //     panic("kpuio: task num > 1 error\n");
+        //     return -E_INVAL;
+        // }
         
         kputaskbase = (kpu_buff*)(buf);
         caller_pid = pid;
-        cprintf("%p, %d\n",((kpu_buff*)buf)->jpeg_data,((kpu_buff*)buf)->size );
-        cprintf("load kputaskbase %x, %p, %d\n", (void*)kputaskbase, kputaskbase->jpeg_data, kputaskbase->size);
+        for(int i = 0; i < kputaskbase->jpgsize; i++){
+            buffer[i] = kputaskbase->jpeg[i];
+            cprintf("%d:%c ",i,  buffer[i]);
+        }
+        kputaskbase->jpeg = (char*)&buffer[0];
+        cprintf("load kputaskbase %x, %p, %d\n", (void*)kputaskbase, kputaskbase->jpeg, kputaskbase->totsize);
         //打印出来
     }
     run_kpu_task_add();

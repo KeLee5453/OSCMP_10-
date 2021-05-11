@@ -123,11 +123,13 @@ sys_write(uint64_t arg[])
     {
         uint64_t *tmp = (uint64_t *)arg[1];
         kpu_buff *test = tmp;
-        cprintf("sys_write %llu, %x\n", arg[0], tmp);
-        cprintf("sys_write %d, \n", (size_t)arg[2]);
+        cprintf("current pid sys_write %d\n", current->pid);
+            cprintf("sys_write  %llu, %x\n", arg[2], tmp);
+        cprintf("sys_write %d %d %d\n", 
+        test->totsize, test->jpgsize, test->jpgoff);
+        //cprintf("sys_write %d, \n", (size_t)arg[2]);
 
         return sysfile_write(fd, tmp, (size_t)arg[2]);
-        //cprintf("sys_write %p, \n", (uint64_t*)base);
     }
     size_t len = (size_t)arg[2];
     return sysfile_write(fd, base, len);

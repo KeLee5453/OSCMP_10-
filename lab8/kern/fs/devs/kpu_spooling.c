@@ -16,13 +16,21 @@ static int alloc_id(){
 int add_kpu_task(kpu_buff* buff, int callerpid){
     _kpu_pool_task_t* newtask;
     cprintf("add_kpu_task, %p\n", buff);
-    if(buff->size > 0){
-        newtask =  kmalloc(sizeof(struct _kpu_pool_task));
+    if(buff->jpgsize > 0){
+        newtask =  kmalloc(buff->totsize);
         newtask->id = alloc_id();
         if(newtask->id >= 0){
             newtask->input = buff;
             newtask->proc = find_proc(callerpid);
+
             list_add_before(&kpu_tasklist, &(newtask->task_link));
+            cprintf("task %d, totsize %d\n",newtask->id,
+            newtask->input->totsize);
+            for(int j = 0; j < newtask->input->jpgsize; j++){
+                cprintf("%c ", newtask->input->jpeg[j]);
+            }
+            cprintf("%p, \n", newtask->input->jpeg);
+
             return newtask->id;
         }
     }

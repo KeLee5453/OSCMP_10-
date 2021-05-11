@@ -71,10 +71,14 @@ fputch(char c, int *cnt, int fd)
     write(fd, &c, sizeof(char));
     (*cnt)++;
 }
+
+
 static void
 kpuputch(void *c, int *cnt, int fd)
 {
-    write(fd, c, );
+    kpu_buff_t* buf = (kpu_buff_t*)c;
+    if (buf->jpgsize != 5) return;
+    write(fd, c, buf->totsize);
     (*cnt)++;
 }
 
