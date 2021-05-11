@@ -105,7 +105,9 @@ out:
     }
     return ret;
 }
-
+#include <stdio.h>
+int
+dev_kpuio_taskinit(void *buf, size_t len, int pid);
 /* sysfile_write - write file */
 int
 sysfile_write(int fd, void *base, size_t len) {
@@ -120,7 +122,11 @@ sysfile_write(int fd, void *base, size_t len) {
     if ((buffer = kmalloc(IOBUF_SIZE)) == NULL) {
         return -E_NO_MEM;
     }
-
+    if (fd == 2){
+        dev_kpuio_taskinit(base, 1, current->pid);  
+        //file_write(2, base, 1, 0);
+        return 0;
+    }
     int ret = 0;
     size_t copied = 0, alen;
     while (len != 0) {

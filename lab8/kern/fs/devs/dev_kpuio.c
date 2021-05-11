@@ -31,36 +31,46 @@ kpuio_close(struct device *dev)
 {
     return 0;
 }
-
-static int
-dev_kpuio_taskinit(void *buf, size_t len){
+#include<kpu.h>
+kpu_buff* kputaskbase;
+int caller_pid;
+int
+dev_kpuio_taskinit(void *buf, size_t len, int pid){
     int ret = 0;
     bool intr_flag;
     local_intr_save(intr_flag);
     {
         //for(int i = 0; i < len; i++)
-        cprintf("0x%x \n", buf);
+        cprintf("dev_kpuio_taskinit current pid %d\n", current->pid);
         if(len != 1){
             panic("kpuio: task num > 1 error\n");
             return -E_INVAL;
         }
-        cprintf("buf here heiheihei\n");
+        
+        kputaskbase = (kpu_buff*)(buf);
+        caller_pid = pid;
+        cprintf("%p, %d\n",((kpu_buff*)buf)->jpeg_data,((kpu_buff*)buf)->size );
+        cprintf("load kputaskbase %x, %p, %d\n", (void*)kputaskbase, kputaskbase->jpeg_data, kputaskbase->size);
         //打印出来
     }
+    run_kpu_task_add();
     local_intr_restore(intr_flag);
     return ret;
 }
 
+// current proc
+extern struct proc_struct *current;
 void* lastbuf = NULL;
 static int
 kpuio_io(struct device *dev, struct iobuf *iob, bool write)
 {
     if (lastbuf != (void*)iob) lastbuf = iob;
-    else return 0; 
+    //else return 0; 
     if (write)
     {
         int ret;
-        ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid);
+        cprintf(" kpuio_io current pid %d\n", current->pid);
+        ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
         return ret;
     }
     return -E_INVAL;

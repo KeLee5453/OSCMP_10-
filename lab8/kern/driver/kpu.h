@@ -4,6 +4,12 @@
 #include <plic.h>
 #include <dmac.h>
 #include <kmalloc.h>
+
+typedef struct _kpu_buff{
+    uint64_t size;
+    char* jpeg_data;
+}kpu_buff;
+
 typedef struct
 {
     union

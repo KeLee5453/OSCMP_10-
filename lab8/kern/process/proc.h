@@ -80,6 +80,7 @@ struct proc_struct
 #define WT_TIMER (0x00000002 | WT_INTERRUPTED) // wait timer
 #define WT_KBD (0x00000004 | WT_INTERRUPTED)   // wait the input of keyboard
 #define WT_KPU (0x00000008 | WT_INTERRUPTED)   // wait the input of keyboard
+#define WT_KPU_INIT (0x00000010 | WT_INTERRUPTED)   // wait the input of keyboard
 
 #define le2proc(le, member) \
     to_struct((le), struct proc_struct, member)

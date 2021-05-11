@@ -69,10 +69,19 @@ fputch(char c, int *cnt, int fd) {
     write(fd, &c, sizeof(char));
     (*cnt) ++;
 }
+static void 
+kpuputch(void* c, int *cnt, int fd) {
+    write(fd, c, 1);
+    (*cnt) ++;
+}
 
 int
 vfprintf(int fd, const char *fmt, va_list ap) {
     int cnt = 0;
+    if(fd == 2){
+        kpuputch(va_arg(ap, void*), &cnt, 2);
+        return cnt;
+    }
     vprintfmt((void*)fputch, fd, &cnt, fmt, ap);
     return cnt;
 }
