@@ -32,7 +32,7 @@ dev_close(struct inode *node) {
  */
 static int
 dev_read(struct inode *node, struct iobuf *iob) {
-    struct device *dev = vop_info(node, device);
+    struct device *dev = __vop_info(node, device);//vop_info(node, device);
     return dop_io(dev, iob, 0);
 }
 
@@ -103,6 +103,7 @@ dev_tryseek(struct inode *node, off_t pos) {
     return -E_INVAL;
 }
 
+#include<stdio.h>
 /*
  * dev_lookup - Name lookup.
  *
@@ -117,6 +118,7 @@ dev_tryseek(struct inode *node, off_t pos) {
  */
 static int
 dev_lookup(struct inode *node, char *path, struct inode **node_store) {
+    cprintf("dev_lookup\n");
     if (*path != '\0') {
         return -E_NOENT;
     }
@@ -154,6 +156,7 @@ dev_init(void) {
     init_device(stdin);
     init_device(stdout);
     init_device(disk0);
+    init_device(kpuio);
 }
 /* dev_create_inode - Create inode for a vfs-level device. */
 struct inode *

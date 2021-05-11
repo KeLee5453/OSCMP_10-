@@ -157,6 +157,13 @@ sys_kpu_run(uint64_t arg[]){
     return 0;
 }
 
+static int
+sys_kpu_settask(uint64_t arg[]){
+    int taskid = 0;
+    
+    return taskid;
+}
+
 static int (*syscalls[])(uint64_t arg[]) = {
     [SYS_exit]              sys_exit,
     [SYS_fork]              sys_fork,
@@ -181,6 +188,7 @@ static int (*syscalls[])(uint64_t arg[]) = {
     [SYS_getdirentry]       sys_getdirentry,
     [SYS_dup]               sys_dup,
     [SYS_kpu_run]           sys_kpu_run,
+    [SYS_kpu_settask]       sys_kpu_settask,
 };
 
 #define NUM_SYSCALLS        ((sizeof(syscalls)) / (sizeof(syscalls[0])))

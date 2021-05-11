@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <error.h>
 #include <assert.h>
+#include <stdio.h>
+
 
 #define IOBUF_SIZE                          4096
 

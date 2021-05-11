@@ -282,7 +282,7 @@ static inline void trap_dispatch(struct trapframe *tf)
         exception_handler(tf);
     }
 }
-
+extern int plic_callback_flag;
 extern void dev_intr();
 extern int cnn_run_all_done(void *_task);
 extern int cnn_input_done(void *ctx);

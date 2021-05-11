@@ -132,7 +132,6 @@
 #define IRQN_MAX 65
 #endif
 
-int plic_callback_flag;
 #define cnn_input_done_flag 1
 #define cnn_continue_flag 2
 #define cnn_run_all_done_flag 3

@@ -22,6 +22,8 @@
 #include "stdio.h"
 #include "io.h"
 
+
+int plic_callback_flag;
 void plic_init(void)
 {
     writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));

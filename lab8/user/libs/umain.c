@@ -28,6 +28,9 @@ umain(long argc, char *argv[]) {
     if ((fd = initfd(1, "stdout:", O_WRONLY)) < 0) {
         warn("open <stdout> failed: %e.\n", fd);
     }
+    if ((fd = initfd(2, "kpuio:", O_RDWR)) < 0){
+        warn("open <kpuio> failed: %e.\n", fd);
+    }
     int ret = main((int)argc, argv);
     exit(ret);
 }

@@ -28,6 +28,7 @@ int sys_getdirentry(int64_t fd, struct dirent *dirent);
 int sys_dup(int64_t fd1, int64_t fd2);
 void sys_lab6_set_priority(uint64_t priority); //only for lab6
 void sys_kpu_run(char jpg_data[],uint32_t jpg_size);
+int sys_kpu_settask(void*task_struct);
 
 #endif /* !__USER_LIBS_SYSCALL_H__ */
 
