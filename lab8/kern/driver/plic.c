@@ -21,6 +21,7 @@
 #include "syscall.h"
 #include "stdio.h"
 #include "io.h"
+int plic_callback_flag;
 
 void plic_init(void)
 {

@@ -322,9 +322,9 @@ int cnn_run(cnn_task_t *task, int dma_ch, void *src, void *dst, int cb)
     plic_irq_register(IRQN_AI_INTERRUPT, cnn_continue_flag, task);
     cnn_run_dma_input(dma_ch, src, cnn_input_done_flag, task);
     do_sleep(20);
-    cnn_input_done(NULL);
-    while (!g_ai_mem_copy_done_flag)
-        ;
+    // cnn_input_done(NULL);
+    // while (!g_ai_mem_copy_done_flag)
+    //     ;
     g_ai_mem_copy_done_flag = 0;
 
     LOG("task length is %d\n", task->length);

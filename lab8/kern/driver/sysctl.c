@@ -1025,6 +1025,7 @@ int sysctl_dma_select(sysctl_dma_channel_t channel, sysctl_dma_select_t select)
     }
 
     /* Write register back to bus */
+    cprintf("[sysctl_dma_select]:sysctl->dma_sel1:%x\n", &sysctl->dma_sel1);
     sysctl->dma_sel0 = dma_sel0;
     sysctl->dma_sel1 = dma_sel1;
 
