@@ -64,7 +64,7 @@
 // #define IOSIZE (0x30000000U)
 // #define IOTOP (IO_BEGIN_PADDR + IOSIZE)
 
-#define KSTACKPAGE 4                     // # of pages in kernel stack
+#define KSTACKPAGE 8                     // # of pages in kernel stack
 #define KSTACKSIZE (KSTACKPAGE * PGSIZE) // sizeof kernel stack
 
 #define USERTOP 0x80000000

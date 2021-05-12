@@ -18,7 +18,8 @@
 #include <stdio.h>
 
 static int
-kpuio_open(struct device *dev, uint32_t open_flags){
+kpuio_open(struct device *dev, uint32_t open_flags)
+{
     if (open_flags != O_RDWR)
     {
         return -E_INVAL;
@@ -31,31 +32,34 @@ kpuio_close(struct device *dev)
 {
     return 0;
 }
-#include<kpu.h>
-kpu_buff* kputaskbase;
+#include <kpu.h>
+kpu_buff *kputaskbase;
 int caller_pid;
 char buffer[4096];
-int
-dev_kpuio_taskinit(void *buf, size_t len, int pid){
+int dev_kpuio_taskinit(void *buf, size_t len, int pid)
+{
     int ret = 0;
     bool intr_flag;
     local_intr_save(intr_flag);
     {
         //for(int i = 0; i < len; i++)
-        cprintf("dev_kpuio_taskinit current pid %d\n", current->pid);
+        cprintf("[dev_kpuio_taskinit]current pid %d\n", current->pid);
         // if(len != 1){
         //     panic("kpuio: task num > 1 error\n");
         //     return -E_INVAL;
         // }
-        
-        kputaskbase = (kpu_buff*)(buf);
+
+        kputaskbase = (kpu_buff *)(buf);
         caller_pid = pid;
-        for(int i = 0; i < kputaskbase->jpgsize; i++){
+        cprintf("[dev_kpuio_taskinit]check jpg: ");
+        for (int i = 0; i < kputaskbase->jpgsize; i++)
+        {
             buffer[i] = kputaskbase->jpeg[i];
-            cprintf("%d:%c ",i,  buffer[i]);
+            cprintf("%d:%c ", i, buffer[i]);
         }
-        kputaskbase->jpeg = (char*)&buffer[0];
-        cprintf("load kputaskbase %x, %p, %d\n", (void*)kputaskbase, kputaskbase->jpeg, kputaskbase->totsize);
+        cprintf("\n");
+        kputaskbase->jpeg = (char *)&buffer[0];
+        cprintf("[dev_kpuio_taskinit]load kputaskbase addr:%p, jpg addr:%p, totsize:%d\n", (void *)kputaskbase, kputaskbase->jpeg, kputaskbase->totsize);
         //打印出来
     }
     run_kpu_task_add();
@@ -65,12 +69,13 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid){
 
 // current proc
 extern struct proc_struct *current;
-void* lastbuf = NULL;
+void *lastbuf = NULL;
 static int
 kpuio_io(struct device *dev, struct iobuf *iob, bool write)
 {
-    if (lastbuf != (void*)iob) lastbuf = iob;
-    //else return 0; 
+    if (lastbuf != (void *)iob)
+        lastbuf = iob;
+    //else return 0;
     if (write)
     {
         int ret;
@@ -82,7 +87,8 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
 }
 
 static int
-kpuio_ioctl(struct device *dev, int op, void *data) {
+kpuio_ioctl(struct device *dev, int op, void *data)
+{
     return -E_UNIMP;
 }
 
@@ -97,7 +103,8 @@ kpuio_device_init(struct device *dev)
     dev->d_ioctl = kpuio_ioctl;
 }
 
-void dev_init_kpuio(void){
+void dev_init_kpuio(void)
+{
     struct inode *node;
     if ((node = dev_create_inode()) == NULL)
     {
@@ -106,7 +113,7 @@ void dev_init_kpuio(void){
     kpuio_device_init(vop_info(node, device));
 
     int ret;
-    if((ret = vfs_add_dev("kpuio", node, 0)) != 0)
+    if ((ret = vfs_add_dev("kpuio", node, 0)) != 0)
     {
         panic("kpuio: vfs_add_dev: %e.\n", ret);
     }
