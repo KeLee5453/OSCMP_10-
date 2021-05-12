@@ -7,6 +7,7 @@
 
 typedef struct _kpu_buff
 {
+    int64_t status;
     uint64_t totsize;
     uint64_t jpgsize;
     int64_t jpgoff;

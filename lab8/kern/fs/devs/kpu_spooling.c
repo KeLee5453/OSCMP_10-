@@ -12,7 +12,9 @@ int maxid;
 int try_check_result(int pid){
     list_entry_t* e = list_next(&kpu_tasklist);
     _kpu_pool_task_t* waitingtask = NULL;
-
+    if (list_empty(&kpu_tasklist)){
+        warn("empty list\n");
+    }
     //check if its running
     while (e != &kpu_tasklist){
         _kpu_pool_task_t* task = le2task(e, task_link);

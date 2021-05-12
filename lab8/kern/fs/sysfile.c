@@ -60,7 +60,8 @@ int sysfile_close(int fd)
 {
     return file_close(fd);
 }
-
+#include <stdio.h>
+#include <kpu.h>
 /* sysfile_read - read file */
 int sysfile_read(int fd, void *base, size_t len)
 {
@@ -86,6 +87,7 @@ int sysfile_read(int fd, void *base, size_t len)
     }
     int ret = 0;
     size_t copied = 0, alen;
+
     while (len != 0)
     {
         if ((alen = IOBUF_SIZE) > len)
@@ -93,6 +95,11 @@ int sysfile_read(int fd, void *base, size_t len)
             alen = len;
         }
         ret = file_read(fd, buffer, alen, &alen);
+
+        //add this to avoid assert fail
+        if(fd == 2)alen = len;
+        //cprintf("alen %d base->status %d\n",alen, ((kpu_buff*)buffer)->status);
+
         if (alen != 0)
         {
             lock_mm(mm);
@@ -108,6 +115,7 @@ int sysfile_read(int fd, void *base, size_t len)
                 }
             }
             unlock_mm(mm);
+            //cprintf("copied %d bytes\n", alen);
         }
         if (ret != 0 || alen == 0)
         {
@@ -123,8 +131,7 @@ out:
     }
     return ret;
 }
-#include <stdio.h>
-#include <kpu.h>
+
 int dev_kpuio_taskinit(void *buf, size_t len, int pid);
 /* sysfile_write - write file */
 int sysfile_write(int fd, void *base, size_t len)
@@ -165,7 +172,6 @@ int sysfile_write(int fd, void *base, size_t len)
         {   
             cprintf("offset %d\n", tmp->jpgoff);
             char* test = (char*)base + tmp->jpgoff;
-            cprintf("%c %c\n", *test, *(test+1));
             lock_mm(mm);
             {
             if (!copy_from_user(mm, buffer2, (char*)base + tmp->jpgoff, alen, 0))

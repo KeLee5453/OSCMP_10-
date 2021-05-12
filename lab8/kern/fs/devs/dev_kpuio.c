@@ -32,7 +32,7 @@ kpuio_close(struct device *dev)
     return 0;
 }
 #include<kpu.h>
-kpu_buff* kputaskbase;
+kpu_buff* kputaskbase, *kpuresultbase;
 int caller_pid;
 char buffer[4096];
 
@@ -85,11 +85,16 @@ dev_try_getresult(void* buf, size_t len, int pid){
     int ret = 0;
     caller_pid = pid;
     cprintf("dev_try_getresult init %d, check %d \n",kpuio_init,kpuio_check);
-
+    kpuresultbase = (kpu_buff*)kmalloc(4096);
     run_kpu_task_check(buf , len, pid);
     //reset mark
+    cprintf("dev_try_getresult got status %d\n", kpuresultbase->status);
+    {
+        //copy to buf so that user can receive
+        ((kpu_buff*)buf)->status = kpuresultbase->status;
+    }
     kpuio_init = kpuio_check = false;
-
+    kfree(kpuresultbase);
     return ret;
 }
 
@@ -112,7 +117,7 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
         kpuio_check = true; kpuio_init = false;
         cprintf("kpuio_read init %d, check %d iob->base %p\n",kpuio_init,kpuio_check, iob->io_base);
         int ret = dev_try_getresult(iob->io_base, iob->io_resid, current->pid);
-        cprintf("got result\n");
+        cprintf("got result %d\n", ((kpu_buff*)iob->io_base)->status);
         return ret;
     }
     return -E_INVAL;

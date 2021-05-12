@@ -1044,7 +1044,7 @@ init_main(void *arg) {
 
 #include <kpu_spooling.h>
 //kpu ctcl
-extern kpu_buff* kputaskbase;
+extern kpu_buff* kputaskbase, *kpuresultbase;
 extern int caller_pid;
 extern bool kpuio_init;
 extern bool kpuio_check;
@@ -1056,7 +1056,6 @@ kpu_task_ctrl(void *arg) {
     while(1){
         bool intr_flag;
         local_intr_save(intr_flag);
-        cprintf("check\n");
         if(kpuio_init && !kpuio_check){
             //add task
             if (caller_pid > 2){
@@ -1100,6 +1099,7 @@ kpu_task_ctrl(void *arg) {
             default:
                 panic("unexpected return %d from try_check_result\n", status);
             };
+            kpuresultbase->status = status;
 
             struct proc_struct* proc = find_proc(caller_pid);
             wakeup_proc(proc);

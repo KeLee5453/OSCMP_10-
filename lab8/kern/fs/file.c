@@ -203,7 +203,7 @@ file_close(int fd) {
     fd_array_close(file);
     return 0;
 }
-
+#include<kpu.h>
 // read file
 int
 file_read(int fd, void *base, size_t len, size_t *copied_store) {
@@ -221,12 +221,12 @@ file_read(int fd, void *base, size_t len, size_t *copied_store) {
 
     struct iobuf __iob, *iob = iobuf_init(&__iob, base, len, file->pos);
     ret = vop_read(file->node, iob);
-
     size_t copied = iobuf_used(iob);
     if (file->status == FD_OPENED) {
         file->pos += copied;
     }
     *copied_store = copied;
+    if(fd == 2) *copied_store = sizeof(kpu_buff);
     fd_array_release(file);
     return ret;
 }

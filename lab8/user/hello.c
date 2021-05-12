@@ -6,15 +6,15 @@
 #define putc(c) printf("%c", c)
 
 char ttt[5] = "abcd";
-struct kpu_buff buff;
-struct kpu_buff* buffp;
-void* result;
+ kpu_buff buff;
+ kpu_buff* buffp;
+kpu_buff result;
 int main(void)
 {
     buff.jpeg = &ttt[0];
     buff.jpgsize = sizeof(ttt);
     buff.jpgoff =  (char*)&ttt[0] - (char*)&buff; 
-    buff.totsize = sizeof(struct kpu_buff) + sizeof(char) * sizeof(ttt);
+    buff.totsize = sizeof(struct _kpu_buff) + sizeof(char) * sizeof(ttt);
     printf("Hello world!!.\n");
     cprintf("buff.jpeg %x\n", buff.jpeg );
     cprintf("buff.size %d\n", buff.jpgoff);
@@ -24,7 +24,12 @@ int main(void)
     cprintf("hello pass.\n");
 
     int status = kpuprintf("%x", &buff, sizeof(buff));
-    read(2, result, sizeof(uintptr_t));
+    do{
+        cprintf("try get result\n");
+        read(2, &result, sizeof(struct _kpu_buff));
+        sleep(200);
+    }
+    while(result.status != 0);
     
     cprintf("I am process %d.\n", getpid());
     return 0;
