@@ -1,4 +1,7 @@
+
 #include <kpu_spooling.h>
+
+
 #include <kmalloc.h>
 #include <stdio.h>
 
@@ -7,7 +10,6 @@ list_entry_t kpu_tasklist;
 int maxid;
 
 
-#include <kpu_test.h>
 
 int try_check_result(int pid){
     list_entry_t* e = list_next(&kpu_tasklist);
@@ -43,6 +45,8 @@ int try_check_result(int pid){
  * return 0 if kpu is busy
  * return pid if kpu starts to run pid's task
  */
+
+extern void kpu_test(_kpu_pool_task_t *runtask);
 int try_run_task(){
     list_entry_t* e = list_next(&kpu_tasklist);
     bool busy = false;
@@ -64,8 +68,8 @@ int try_run_task(){
     cprintf("deliver task from pid%d, jpeg %p, size %d to kpu\n " 
             ,runtask->proc->pid, runtask->input->jpeg, runtask->input->jpgsize);
     run_task(runtask);
-    //执行kpu_test(runtask)
-    //kpu_test();
+    // 执行kpu_test(runtask);
+    kpu_test(runtask);
     return runtask->proc->pid;
 }
 static int alloc_id(){

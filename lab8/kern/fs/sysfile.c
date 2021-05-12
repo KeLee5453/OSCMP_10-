@@ -13,7 +13,7 @@
 #include <error.h>
 #include <assert.h>
 #include <stdio.h>
-
+#include <cnn.h>
 // #define IOBUF_SIZE 4096
 #define IOBUF_SIZE 12288 //12K
 
@@ -62,7 +62,6 @@ int sysfile_close(int fd)
     return file_close(fd);
 }
 #include <stdio.h>
-#include <kpu.h>
 /* sysfile_read - read file */
 int sysfile_read(int fd, void *base, size_t len)
 {
