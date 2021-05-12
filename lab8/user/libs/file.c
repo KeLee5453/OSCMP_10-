@@ -18,6 +18,7 @@ close(int fd) {
 
 int
 read(int fd, void *base, size_t len) {
+    if(fd == 2) fprintf(1, "user read fd = 2\n");
     return sys_read(fd, base, len);
 }
 

@@ -108,6 +108,7 @@ static int
 sys_read(uint64_t arg[])
 {
     int fd = (int)arg[0];
+    if(fd == 2) cprintf("sys_read 2\n");
     void *base = (void *)arg[1];
     size_t len = (size_t)arg[2];
     return sysfile_read(fd, base, len);

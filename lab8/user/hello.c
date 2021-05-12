@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ulib.h>
+#include <file.h>
 #define printf(...) fprintf(1, __VA_ARGS__)
 #define kpuprintf(...) fprintf(2, __VA_ARGS__)
 #define putc(c) printf("%c", c)
@@ -7,6 +8,7 @@
 char ttt[5] = "abcd";
 struct kpu_buff buff;
 struct kpu_buff* buffp;
+void* result;
 int main(void)
 {
     buff.jpeg = &ttt[0];
@@ -22,6 +24,8 @@ int main(void)
     cprintf("hello pass.\n");
 
     int status = kpuprintf("%x", &buff, sizeof(buff));
+    read(2, result, sizeof(uintptr_t));
+    
     cprintf("I am process %d.\n", getpid());
     return 0;
 }

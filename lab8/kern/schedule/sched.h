@@ -69,5 +69,6 @@ void add_timer(timer_t *timer);     // add timer to timer_list
 void del_timer(timer_t *timer);     // del timer from timer_list
 void run_timer_list(void);          // call scheduler to update tick related info, and check the timer is expired? If expired, then wakup proc
 void run_kpu_task_add(void);        // called to wake up kpu task adder
+void run_kpu_task_check(void* buf, size_t len, int pid);
 #endif /* !__KERN_SCHEDULE_SCHED_H__ */
 

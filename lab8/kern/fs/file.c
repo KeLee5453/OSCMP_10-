@@ -210,6 +210,7 @@ file_read(int fd, void *base, size_t len, size_t *copied_store) {
     int ret;
     struct file *file;
     *copied_store = 0;
+    if(fd == 2) cprintf("kern file_read fd = 2\n");
     if ((ret = fd2file(fd, &file)) != 0) {
         return ret;
     }
@@ -220,7 +221,7 @@ file_read(int fd, void *base, size_t len, size_t *copied_store) {
 
     struct iobuf __iob, *iob = iobuf_init(&__iob, base, len, file->pos);
     ret = vop_read(file->node, iob);
-    
+
     size_t copied = iobuf_used(iob);
     if (file->status == FD_OPENED) {
         file->pos += copied;

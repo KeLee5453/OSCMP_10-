@@ -78,7 +78,12 @@ int sysfile_read(int fd, void *base, size_t len)
     {
         return -E_NO_MEM;
     }
-
+    // if(fd == 2){
+    //     cprintf("kpu sysfile_read\n");
+    // }
+    if(fd > 2){
+        cprintf("fd > 2\n");
+    }
     int ret = 0;
     size_t copied = 0, alen;
     while (len != 0)
@@ -136,6 +141,9 @@ int sysfile_write(int fd, void *base, size_t len)
     }
     void *buffer;
     void* buffer2;
+    if(fd == 2){
+        cprintf("kpu sysfile write\n");
+    }
     if ((buffer = kmalloc(IOBUF_SIZE)) == NULL)
     {
         return -E_NO_MEM;

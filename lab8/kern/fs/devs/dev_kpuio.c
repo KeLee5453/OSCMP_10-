@@ -35,6 +35,18 @@ kpuio_close(struct device *dev)
 kpu_buff* kputaskbase;
 int caller_pid;
 char buffer[4096];
+
+bool kpuio_init;      //init action
+bool kpuio_check;     //get result action
+//kpu_intr handler
+//  1. get running task, 省略一致性检查了，默认我的调度器不会有bug
+//  2. mark running task as stoped
+//   
+int 
+dev_kpuio_intr(void){
+    return 0;
+}
+
 int
 dev_kpuio_taskinit(void *buf, size_t len, int pid){
     int ret = 0;
@@ -58,8 +70,26 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid){
         cprintf("load kputaskbase %x, %p, %d\n", (void*)kputaskbase, kputaskbase->jpeg, kputaskbase->totsize);
         //打印出来
     }
+    kpuio_init = true; kpuio_check = false;
+
     run_kpu_task_add();
+
+    //reset mark
+    kpuio_init = kpuio_check = false;
     local_intr_restore(intr_flag);
+    return ret;
+}
+
+int
+dev_try_getresult(void* buf, size_t len, int pid){
+    int ret = 0;
+    caller_pid = pid;
+    cprintf("dev_try_getresult init %d, check %d \n",kpuio_init,kpuio_check);
+
+    run_kpu_task_check(buf , len, pid);
+    //reset mark
+    kpuio_init = kpuio_check = false;
+
     return ret;
 }
 
@@ -74,8 +104,15 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
     if (write)
     {
         int ret;
-        cprintf(" kpuio_io current pid %d\n", current->pid);
+        kpuio_init = true; kpuio_check = false;
+        cprintf(" kpuio_io init %d, check %d current pid %d\n",kpuio_init,kpuio_check, current->pid);
         ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
+        return ret;
+    }else{
+        kpuio_check = true; kpuio_init = false;
+        cprintf("kpuio_read init %d, check %d iob->base %p\n",kpuio_init,kpuio_check, iob->io_base);
+        int ret = dev_try_getresult(iob->io_base, iob->io_resid, current->pid);
+        cprintf("got result\n");
         return ret;
     }
     return -E_INVAL;
@@ -110,4 +147,6 @@ void dev_init_kpuio(void){
     {
         panic("kpuio: vfs_add_dev: %e.\n", ret);
     }
+
+    kpuio_init = kpuio_check = false;
 }

@@ -123,6 +123,7 @@ sys_close(int64_t fd) {
 
 int
 sys_read(int64_t fd, void *base, size_t len) {
+    //if (fd == 2) return 0;
     return syscall(SYS_read, fd, base, len);
 }
 
