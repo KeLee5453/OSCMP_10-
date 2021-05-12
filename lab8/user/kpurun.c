@@ -149,14 +149,14 @@ unsigned char jpeg_data[1800] = {
     0xDF, 0x33, 0x7A, 0x9C, 0x80, 0x2B, 0x1F, 0x5E, 0xD7, 0x0D, 0x84, 0xD1
     };
 
-struct kpu_buff buff;
-struct kpu_buff *buffp;
+kpu_buff buff;
+kpu_buff *buffp;
 int main(void)
 {
     buff.jpeg = &jpeg_data[0];
     buff.jpgsize = sizeof(jpeg_data);
     buff.jpgoff = (char *)&jpeg_data[0] - (char *)&buff;
-    buff.totsize = sizeof(struct kpu_buff) + sizeof(char) * sizeof(jpeg_data);
+    buff.totsize = sizeof(kpu_buff) + sizeof(char) * sizeof(jpeg_data);
     printf("KPU run test begin!!.\n");
     cprintf("user input buff.jpeg %x\n", buff.jpeg);
     cprintf("user input buff.jpgoff %d\n", buff.jpgoff);

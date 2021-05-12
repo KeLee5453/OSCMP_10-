@@ -193,9 +193,11 @@ void exception_handler(struct trapframe *tf)
         break;
     case CAUSE_FETCH_ACCESS:
         cprintf("Instruction access fault\n");
+        panic("Instruction access fault\n");
         break;
     case CAUSE_ILLEGAL_INSTRUCTION:
         cprintf("Illegal instruction\n");
+        panic("Illegal instruction\n");
         break;
     case CAUSE_BREAKPOINT:
         cprintf("Breakpoint\n");
