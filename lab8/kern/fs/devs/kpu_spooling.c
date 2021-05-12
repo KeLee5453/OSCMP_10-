@@ -76,7 +76,7 @@ static int alloc_id(){
 // return taskid, if -1 failed
 int add_kpu_task(kpu_buff* buff, int callerpid){
     _kpu_pool_task_t* newtask;
-    //cprintf("add_kpu_task, %p\n", buff);
+    cprintf("[add_kpu_task], buff addr:%p,current pid:%d\n", buff,current->pid);
     if(buff->jpgsize > 0){
         newtask =  kmalloc(buff->totsize);
         newtask->id = alloc_id();
@@ -85,12 +85,15 @@ int add_kpu_task(kpu_buff* buff, int callerpid){
             newtask->proc = find_proc(callerpid);
 
             list_add_before(&kpu_tasklist, &(newtask->task_link));
-            cprintf("task %d, totsize %d\n",newtask->id,
+            cprintf("[add_kpu_task]taskid: %d, totsize %d\n",newtask->id,
             newtask->input->totsize);
+            cprintf("[add_kpu_task]check jpg: ");
             for(int j = 0; j < newtask->input->jpgsize; j++){
-                cprintf("%c ", newtask->input->jpeg[j]);
+                cprintf("%d:%c ",j, newtask->input->jpeg[j]);
             }
             task_init(newtask); //set flag
+            cprintf("\n");
+            cprintf("[add_kpu_task]jpeg addr:%p, \n", newtask->input->jpeg);
             return newtask->id;
         }
     }

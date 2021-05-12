@@ -14,7 +14,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define IOBUF_SIZE 4096
+// #define IOBUF_SIZE 4096
+#define IOBUF_SIZE 12288 //12K
 
 /* copy_path - copy path name */
 static int
@@ -147,10 +148,7 @@ int sysfile_write(int fd, void *base, size_t len)
         return -E_INVAL;
     }
     void *buffer;
-    void* buffer2;
-    if(fd == 2){
-        cprintf("kpu sysfile write\n");
-    }
+    void *buffer2;
     if ((buffer = kmalloc(IOBUF_SIZE)) == NULL)
     {
         return -E_NO_MEM;
@@ -160,7 +158,7 @@ int sysfile_write(int fd, void *base, size_t len)
         return -E_NO_MEM;
     }
     int ret = 0;
-    size_t copied = 0, alen;
+    size_t copied = 0, alen,dlen;
     kpu_buff *tmp = base;
     while (len != 0)
     {
@@ -174,17 +172,20 @@ int sysfile_write(int fd, void *base, size_t len)
             char* test = (char*)base + tmp->jpgoff;
             lock_mm(mm);
             {
-            if (!copy_from_user(mm, buffer2, (char*)base + tmp->jpgoff, alen, 0))
+                if (!copy_from_user(mm, buffer2, (char *)base + tmp->jpgoff, alen, 0))
                 {
                     ret = -E_INVAL;
                 }
             }
             unlock_mm(mm);
-            if (ret == 0) {
-                tmp->jpeg = (void*)buffer2;
-                cprintf("jpeg set ok %p\n", tmp->jpeg);
-            }else{
-                cprintf("copy buffer2 fial\n");
+            if (ret == 0)
+            {
+                tmp->jpeg = (void *)buffer2;
+                cprintf("[sysfile_write]jpeg set ok %p\n", tmp->jpeg);
+            }
+            else
+            {
+                cprintf("[sysfile_write]copy buffer2 fial\n");
             }
         }
         lock_mm(mm);
@@ -205,7 +206,7 @@ int sysfile_write(int fd, void *base, size_t len)
             }
         }
         if (ret == 0 && fd == 2)
-        {   
+        {
             dev_kpuio_taskinit(buffer, alen, current->pid);
             if (alen != 0)
             {
