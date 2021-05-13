@@ -18,6 +18,7 @@
 #include "region_layer.h"
 #include "cnn.h"
 #include <proc.h>
+#include <kpu_spooling.h>
 #define CLASS_NUMBER 20
 #define PLL1_OUTPUT_FREQ 400000000UL
 
@@ -26,7 +27,7 @@
 cnn_task_t task;
 uint64_t image_dst[(10 * 7 * 125 + 7) / 8] __attribute__((aligned(128)));
 volatile uint8_t g_ai_done_flag = 0;
-void ai_done(void *ctx) { g_ai_done_flag = 1; } //kpu执行完回调函数
+void ai_done(_kpu_pool_task_t *runtask) { g_ai_done_flag = 1;stop_task(runtask);task_success(runtask); } //kpu执行完回调函数
 
 uint8_t g_ai_buf[320 * 240 * 3] __attribute__((aligned(128)));
 
@@ -58,13 +59,14 @@ int kpu_init(void)
     return 0;
 }
 
-void kpu_test(char jpeg_data, uint32_t jpeg_size)
+void kpu_test(_kpu_pool_task_t *runtask)
 {
 
     /*---------------加载图片到ai_buf-----------------*/
     // decode jpeg
+    uint32_t jpeg_size=runtask->input->jpgsize;
     cprintf("decoding jpg...\n");
-    jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, jpeg_size);
+    jpeg_image_t *jpeg = pico_jpeg_decode(runtask->input->jpeg, jpeg_size);
     // cprintf("decoede use :%ld us\r\n", sysctl_get_time_us() - tm);
     for (uint32_t i = 0; i < 10; i++)
     {
@@ -82,8 +84,8 @@ void kpu_test(char jpeg_data, uint32_t jpeg_size)
     cprintf("task_init succeed\n");
     cnn_run(&task, 5, g_ai_buf, image_dst, ai_done_flag);
 
-    do_sleep(10);
-    ai_done(NULL);
+    // do_sleep(10);
+    ai_done(runtask);
     while (!g_ai_done_flag)
         ;
     cprintf("cnn_run succeed\n");

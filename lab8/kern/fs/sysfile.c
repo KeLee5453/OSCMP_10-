@@ -62,7 +62,6 @@ int sysfile_close(int fd)
     return file_close(fd);
 }
 #include <stdio.h>
-#include <kpu.h>
 /* sysfile_read - read file */
 int sysfile_read(int fd, void *base, size_t len)
 {
@@ -132,7 +131,7 @@ out:
     }
     return ret;
 }
-
+#include<kpu.h>
 int dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize);
 /* sysfile_write - write file */
 int sysfile_write(int fd, void *base, size_t len)

@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <error.h>
 #include <assert.h>
-
+#include <cnn.h>
 #define testfd(fd)                          ((fd) >= 0 && (fd) < FILES_STRUCT_NENTRY)
 
 // get_fd_array - get current process's open files table
@@ -203,7 +203,7 @@ file_close(int fd) {
     fd_array_close(file);
     return 0;
 }
-#include<kpu.h>
+#include<cnn.h>
 // read file
 int
 file_read(int fd, void *base, size_t len, size_t *copied_store) {

@@ -113,7 +113,7 @@ sys_read(uint64_t arg[])
     size_t len = (size_t)arg[2];
     return sysfile_read(fd, base, len);
 }
-#include <kpu.h>
+#include <cnn.h>
 static int
 sys_write(uint64_t arg[])
 {
@@ -187,9 +187,9 @@ sys_dup(uint64_t arg[])
 static int
 sys_kpu_run(uint64_t arg[])
 {
-    char *jpg_data = (char *)arg[0];
-    uint32_t jpg_size = (uint32_t)arg[1];
-    kpu_test(jpg_data, jpg_size);
+    // char *jpg_data = (char *)arg[0];
+    // uint32_t jpg_size = (uint32_t)arg[1];
+    // kpu_test(jpg_data, jpg_size);
     return 0;
 }
 

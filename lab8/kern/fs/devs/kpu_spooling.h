@@ -1,4 +1,4 @@
-#include <kpu.h>
+#include <cnn.h>
 #include <list.h>
 #include <assert.h>
 #include <stdio.h>

@@ -14,7 +14,7 @@
 #include <sbi.h>
 #include <io.h>
 #include <trap.h>
-#include <kpu.h>
+#include <cnn.h>
 #include <stdio.h>
 
 static int
@@ -32,7 +32,7 @@ kpuio_close(struct device *dev)
 {
     return 0;
 }
-#include<kpu.h>
+#include<cnn.h>
 kpu_buff* kputaskbase, *kpuresultbase;
 int caller_pid;
 char buffer[4096];
