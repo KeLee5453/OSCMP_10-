@@ -140,7 +140,6 @@ int plic_irq_complete(uint32_t source)
 void plic_irq_register(plic_irq_t irq, plic_irq_callback_t callback, void *ctx)
 {
     /* Read core id */
-    printf("current_coreid():%d\n", (int)current_coreid());
     unsigned long core_id = current_coreid();
     /* Set user callback function */
     plic_instance[core_id][irq].callback = callback;

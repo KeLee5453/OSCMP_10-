@@ -213,7 +213,7 @@ static void get_region_boxes(region_layer_t *rl, float *predictions,
         int class_index =
             entry_index(rl, n * layer_width * layer_height + i, coords + 1 + j);
         float prob = scale * predictions[class_index];
-        // printf("get_region_boxes-prob:%f\n", prob);
+        printf("get_region_boxes-prob:%f\n", prob);
         probs[index][j] = (prob > threshold) ? prob : 0;
         if (prob > max) max = prob;
       }
@@ -341,7 +341,7 @@ void region_layer_run(region_layer_t *rl, obj_info_t *obj_info) {
   forward_region_layer(rl);
   get_region_boxes(rl, rl->output, rl->probs, rl->boxes);
   do_nms_sort(rl, rl->boxes, rl->probs);
-  // region_layer_output(rl, obj_info);
+  region_layer_output(rl, obj_info);
 }
 
 void region_layer_draw_boxes(region_layer_t *rl, callback_draw_box callback) {

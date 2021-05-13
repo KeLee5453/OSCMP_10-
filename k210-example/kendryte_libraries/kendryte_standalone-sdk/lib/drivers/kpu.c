@@ -382,7 +382,9 @@ void kpu_input_dma(const kpu_layer_argument_t *layer, const uint8_t *src, dmac_c
 {
     uint64_t input_size = layer->kernel_calc_type_cfg.data.channel_switch_addr * 64 * (layer->image_channel_num.data.i_ch_num + 1);
     dmac_set_irq(dma_ch, callback, userdata, 1);
-    printf("dmac_set_single_mode:inputsize %u\n", (uint32_t)input_size);
+    printf("\n");
+    printf("input_size:%d", (int)input_size);
+    printf("\n");
     dmac_set_single_mode(dma_ch, (void *)src, (void *)(uintptr_t)(AI_IO_BASE_ADDR + layer->image_addr.data.image_src_addr * 64), DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
                          DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
 }
@@ -1369,7 +1371,7 @@ int kpu_load_kmodel(kpu_model_context_t *ctx, const uint8_t *buffer)
 #endif
     uintptr_t base_addr = (uintptr_t)buffer;
     const kpu_kmodel_header_t *header = (const kpu_kmodel_header_t *)buffer;
-    printf("header->version =%d,,header->arch= %d.\n", header->version, header->arch);
+
     if(header->version == 3 && header->arch == 0)
     {
         ctx->is_nncase = 0;
@@ -1543,7 +1545,7 @@ static int ai_step(void *userdata)
     last_layer_type = cnt_layer_header->type;
     last_time = sysctl_get_time_us();
 #endif
-    printf("cnt_layer_header->type:%d\n", cnt_layer_header->type);
+
     switch(cnt_layer_header->type)
     {
         case KL_ADD:
@@ -1630,7 +1632,6 @@ static void ai_step_not_isr(void *userdata)
 
 int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_number_t dma_ch, kpu_done_callback_t done_callback, void *userdata)
 {
-    printf("ctx->is_nncase::%d\n", ctx->is_nncase);
     if(ctx->is_nncase)
         return nncase_run_kmodel(ctx, src, dma_ch, done_callback, userdata);
 
@@ -1647,6 +1648,8 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
 
     kpu_kmodel_header_t *header = (kpu_kmodel_header_t *)ctx->model_buffer;
     kpu->interrupt_clear.reg = 7;
+    printf("kpu->.reg = 7");
+
     kpu->fifo_threshold.data = (kpu_config_fifo_threshold_t){
         .fifo_full_threshold = 10, .fifo_empty_threshold = 1};
     kpu->eight_bit_mode.data = (kpu_config_eight_bit_mode_t){
@@ -1670,12 +1673,10 @@ int kpu_run_kmodel(kpu_model_context_t *ctx, const uint8_t *src, dmac_channel_nu
 
             if((layer_arg.image_size.data.i_row_wid + 1) % 64 != 0)
             {
-                printf("kpu_kmodel_input_with_padding\n");
                 kpu_kmodel_input_with_padding(&layer_arg, src);
                 ai_step_not_isr(ctx);
             } else
             {
-                printf("KPU inputs dma\n");
                 kpu_input_dma(&layer_arg, src, ctx->dma_ch, ai_step, ctx);
             }
         }

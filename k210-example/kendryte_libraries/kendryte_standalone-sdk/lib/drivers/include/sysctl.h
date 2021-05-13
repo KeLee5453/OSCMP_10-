@@ -1026,7 +1026,7 @@ void sysctl_set_power_mode(sysctl_power_bank_t power_bank, sysctl_io_power_mode_
 
 /**
  * @brief       get the frequency of CPU
- * 
+ *
  * @return      The frequency of CPU
  */
 uint32_t sysctl_cpu_get_freq(void);

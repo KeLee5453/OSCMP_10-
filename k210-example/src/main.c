@@ -4,30 +4,23 @@
 #include <unistd.h>
 
 #include "board_config.h"
-// #include "dvp.h"
 #include "fpioa.h"
 #include "image.h"
-#include "lcd.h"
-// #include "w25qxx.h"
-// #if OV5640
-// #include "ov5640.h"
-// #endif
-// #if OV2640
-// #include "ov2640.h"
-// #endif
 #include "kpu.h"
+#include "lcd.h"
 #include "nt35310.h"
+#include "picojpeg.h"
+#include "picojpeg_util.h"
 #include "plic.h"
 #include "region_layer.h"
 #include "sysctl.h"
 #include "uarths.h"
 #include "utils.h"
+#include "w25qxx.h"
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #define INCBIN_PREFIX
-// #include <float.h>
 #include "incbin.h"
 #include "iomem.h"
-#include "pic.h"
 
 #define PLL0_OUTPUT_FREQ 800000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
@@ -51,35 +44,20 @@ volatile uint8_t g_ai_done_flag = 0;
 
 static void ai_done(void *ctx) { g_ai_done_flag = 1; }
 
-uint32_t *g_lcd_gram0 __attribute__((aligned(64))) = rgb_image;  //显示图片
-uint32_t *g_lcd_gram1 __attribute__((aligned(64))) = rgb_image;  //显示图片
-uint8_t *g_ai_buf __attribute__((aligned(128))) = ai_image_peaple;  //读取图片
+uint32_t *g_lcd_gram0;  //显示图片
+uint32_t *g_lcd_gram1;  //显示图片
+uint8_t *g_ai_buf;      //读取图片
 
+extern unsigned char jpeg_data[11485];
 #define ANCHOR_NUM 5
 
-float g_anchor[ANCHOR_NUM * 2] = {1.08,  1.19, 3.42, 4.41,  6.63,
-                                  11.38, 9.42, 5.11, 16.62, 10.52};
-
-// volatile uint8_t g_dvp_finish_flag = 0;
+// float g_anchor[ANCHOR_NUM * 2] = {1.08,  1.19, 3.42, 4.41,  6.63,
+//                                   11.38, 9.42, 5.11, 16.62, 10.52};
+static float g_anchor[ANCHOR_NUM * 2] = {1.889,    2.5245, 2.9465,   3.94056,
+                                         3.99987,  5.3658, 5.155437, 6.92275,
+                                         6.718375, 9.01025};
 volatile uint8_t g_ram_mux = 0;
-// DVP 中断回调
-// static int on_irq_dvp(void *ctx) {
-//   if (dvp_get_interrupt(DVP_STS_FRAME_FINISH)) {
-//     /* switch gram */
-//     // dvp_set_display_addr(g_ram_mux ? (uint32_t)g_lcd_gram0
-//     //                                : (uint32_t)g_lcd_gram1);
 
-//     dvp_clear_interrupt(DVP_STS_FRAME_FINISH);
-//     g_dvp_finish_flag = 1;
-//   } else {
-//     if (g_dvp_finish_flag == 0) dvp_start_convert();
-//     dvp_clear_interrupt(DVP_STS_FRAME_START);
-//   }
-
-//   return 0;
-// }
-
-// #if BOARD_LICHEEDAN
 //初始化设备，使用宏定义区分board，详情修改 board_config.h
 static void io_mux_init(void) {
   /* Init DVP IO map and function settings */
@@ -106,33 +84,6 @@ static void io_set_power(void) {
   sysctl_set_power_mode(SYSCTL_POWER_BANK6, SYSCTL_POWER_V18);
   sysctl_set_power_mode(SYSCTL_POWER_BANK7, SYSCTL_POWER_V18);
 }
-
-// #else
-// static void io_mux_init(void) {
-//   /* Init DVP IO map and function settings */
-//   fpioa_set_function(11, FUNC_CMOS_RST);
-//   fpioa_set_function(13, FUNC_CMOS_PWDN);
-//   fpioa_set_function(14, FUNC_CMOS_XCLK);
-//   fpioa_set_function(12, FUNC_CMOS_VSYNC);
-//   fpioa_set_function(17, FUNC_CMOS_HREF);
-//   fpioa_set_function(15, FUNC_CMOS_PCLK);
-//   fpioa_set_function(10, FUNC_SCCB_SCLK);
-//   fpioa_set_function(9, FUNC_SCCB_SDA);
-
-//   /* Init SPI IO map and function settings */
-//   fpioa_set_function(8, FUNC_GPIOHS0 + DCX_GPIONUM);
-//   fpioa_set_function(6, FUNC_SPI0_SS3);
-//   fpioa_set_function(7, FUNC_SPI0_SCLK);
-
-//   sysctl_set_spi0_dvp_data(1);
-// }
-
-// static void io_set_power(void) {
-//   /* Set dvp and spi pin to 1.8V */
-//   sysctl_set_power_mode(SYSCTL_POWER_BANK1, SYSCTL_POWER_V18);
-//   sysctl_set_power_mode(SYSCTL_POWER_BANK2, SYSCTL_POWER_V18);
-// }
-// #endif
 
 #if (CLASS_NUMBER > 1)
 typedef struct {
@@ -162,17 +113,13 @@ static void lable_init(void) {
   class_lable[0].height = 16;
   class_lable[0].width = 8 * strlen(class_lable[0].str);
   class_lable[0].ptr = lable_string_draw_ram;
-  lcd_ram_draw_string(class_lable[0].str, class_lable[0].ptr, BLACK,
-                      class_lable[0].color);
+  printf("func: lable init\n");
   for (index = 1; index < CLASS_NUMBER; index++) {
     class_lable[index].height = 16;
     class_lable[index].width = 8 * strlen(class_lable[index].str);
     class_lable[index].ptr =
         class_lable[index - 1].ptr +
         class_lable[index - 1].height * class_lable[index - 1].width / 2;
-    //在LCD上打印类别的字
-    lcd_ram_draw_string(class_lable[index].str, class_lable[index].ptr, BLACK,
-                        class_lable[index].color);
   }
 #endif
 }
@@ -197,7 +144,7 @@ static void drawboxes(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2,
 
 int main(void) {
   /* Set CPU and dvp clk */
-  sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
+  // sysctl_pll_set_freq(SYSCTL_PLL0, PLL0_OUTPUT_FREQ);
   sysctl_pll_set_freq(SYSCTL_PLL1, PLL1_OUTPUT_FREQ);
   uarths_init();
 
@@ -209,8 +156,7 @@ int main(void) {
   printf("flash init\n");
   // w25qxx_init(3, 0);
   // w25qxx_enable_quad_mode();
-  // g_ai_buf = (uint8_t *)iomem_malloc(320 * 240 * 3);
-  // g_ai_buf = rgb_image_cow;
+  g_ai_buf = (uint8_t *)iomem_malloc(320 * 240 * 3);
 #if LOAD_KMODEL_FROM_FLASH
   model_data = (uint8_t *)malloc(KMODEL_SIZE + 255);
   uint8_t *model_data_align =
@@ -224,7 +170,6 @@ int main(void) {
   lable_init();
   //初始化标签
 
-  /* LCD init */
   printf("LCD init\n");
   lcd_init();
   //初始化显示屏
@@ -237,129 +182,100 @@ int main(void) {
   lcd_clear(BLACK);
   lcd_draw_string(136, 70, "OSCMP__10-", WHITE);
   lcd_draw_string(104, 150, "20 class detection", WHITE);
-  /* DVP init */
-  printf("DVP init\n");
-
-  // #if OV5640
-  //   dvp_init(16);
-  //   dvp_set_xclk_rate(50000000);
-  //   dvp_enable_burst();
-  //   dvp_set_output_enable(0, 1);
-  //   dvp_set_output_enable(1, 1);
-  //   dvp_set_image_format(DVP_CFG_RGB_FORMAT);
-  //   dvp_set_image_size(320, 240);
-  //   ov5640_init();
-  // #else
-  //   dvp_init(8);                  //初始化DVP，设置sccb寄存器长度为8
-  //   dvp_set_xclk_rate(24000000);  //摄像头时钟频率
-  //   dvp_enable_burst();           //使能突发传输模式
-  //   dvp_set_output_enable(0, 0);  //使能输出模式，并设置图像输出至内存
-  //   dvp_set_output_enable(0, 0);  //使能输出模式，并设置图像输出至AI
-  //   dvp_set_image_format(DVP_CFG_RGB_FORMAT);  //设置接收图像模式模式为RGB
-
-  //   dvp_set_image_size(320, 240);  //设置DVP 图像采集尺寸为320*240
-  //   ov2640_init();                 //初始化摄像头
-  //   printf("ov2640init finished\n");
-  // #endif
-
-  //设置AI 存放图像的地址，供AI 模块进行算法处理。
-  //分别是红色分量地址、绿色分量地址、蓝色分量地址
-  // dvp_set_ai_addr((uint32_t)g_ai_buf, (uint32_t)(g_ai_buf + 320 * 240),
-  //                 (uint32_t)(g_ai_buf + 320 * 240 * 2));
-  //设置采集图像在内存中的存放地址，可以用来显示。
-  // dvp_set_display_addr((uint32_t)g_lcd_gram0);
-  //禁止图像开始采集中断、结束采集中断
-  //   dvp_config_interrupt(DVP_CFG_START_INT_ENABLE |
-  //   DVP_CFG_FINISH_INT_ENABLE,
-  // 0);
-  //禁用自动接收图像模式
-  // dvp_disable_auto();
-
-  /* DVP interrupt config */
-  // printf("DVP interrupt config\n");
-  // 设置摄像头的中断  IRQN_DVP_INTERRUPT是数字摄像头（DVP）中断号
-  // plic_set_priority(IRQN_DVP_INTERRUPT, 1);
-  // plic_irq_register注册外部中断函数，on_irq_dvp是中断回调函数
-  // plic_irq_register(IRQN_DVP_INTERRUPT, on_irq_dvp, NULL);
-  /*使能全局中断*/
-  // plic_irq_enable(IRQN_DVP_INTERRUPT);
+  sleep(1);
 
   /* enable global interrupt */
   sysctl_enable_irq();
-  printf("g_ai_buf:  %x\n", g_ai_buf);
+
+  // decode jpeg
+  uint64_t tm = sysctl_get_time_us();
+  jpeg_image_t *jpeg = pico_jpeg_decode(jpeg_data, sizeof(jpeg_data));
+  printf("decoede use :%ld us\r\n", sysctl_get_time_us() - tm);
+
+  for (uint32_t i = 0; i < 10; i++) {
+    /* code */ printf("jped->data:%d   \n", (*(jpeg->img_data + i)));
+  }
+  // jpeg_to_ai(jpeg);
+  uint32_t ii;
+  for (ii = 0; *(jpeg->img_data + ii) != NULL; ii++) {
+    /* code */;
+  }
+  printf("ima_data len:%d", ii);
+
+  g_ai_buf = jpeg_data;
   /* system start */
   printf("system start\n");
   g_ram_mux = 0;
-  // g_dvp_finish_flag = 0;
-  // dvp_clear_interrupt(DVP_STS_FRAME_START | DVP_STS_FRAME_FINISH);
-  // dvp_config_interrupt(DVP_CFG_START_INT_ENABLE | DVP_CFG_FINISH_INT_ENABLE,
-  // 0);
-
   /* init kpu */
   if (kpu_load_kmodel(&task, model_data_align) != 0) {
     printf("\nmodel init error\n");
     while (1) {
-      printf("kmodel is loading...\n");
     };
   }
   printf("kmodel  loaded...\n");
   detect_rl.anchor_number = ANCHOR_NUM;
   detect_rl.anchor = g_anchor;
-  detect_rl.threshold = 0.7;
+  detect_rl.threshold = 0.5;
   detect_rl.nms_value = 0.3;
   region_layer_init(&detect_rl, 10, 7, 125, 320, 240);
 
-  // uint64_t time_last = sysctl_get_time_us();
-  // uint64_t time_now = sysctl_get_time_us();
-  // int time_count = 0;
-
-  /* dvp finish*/
-  // while (g_dvp_finish_flag == 0) {
-  //   printf("dvp is running...\n");
-  // };
-
-  /* start to calculate */
-  // printf("g_ai_buf  :%x\n", g_ai_buf);
   printf("kpu is running kmodel\n");
-  for (uint8_t i = 0; i < 10; i++) {
-    /* code */ printf("g_ai_buf:%d   ", (*(g_ai_buf + i)));
-  }
-
+  g_ai_done_flag = 0;
   kpu_run_kmodel(&task, g_ai_buf, DMAC_CHANNEL5, ai_done, NULL);
-
   while (!g_ai_done_flag)
     ;
-  g_ai_done_flag = 0;
+
   printf("kpu has run kmodel\n");
+
   float *output;
   size_t output_size;
   printf("kpu is getting output ...\n");
   kpu_get_output(&task, 0, (uint8_t **)&output, &output_size);
-  for (size_t i = 0; i < 10; i++) {
-    /* code */
+  for (size_t i = 0; i < 30; i++) {
     printf("kpu has got output : %f\n", *(output + i));
   }
 
   detect_rl.input = output;
+
   /* start region layer */
   printf("region layer is running \n");
   region_layer_run(&detect_rl, NULL);
   printf("region layer has run \n");
-  /* display pic*/
-  g_ram_mux ^= 0x01;
-  lcd_draw_picture(0, 0, 320, 240, g_ram_mux ? g_lcd_gram0 : g_lcd_gram1);
-  // g_dvp_finish_flag = 0;
 
-  /* draw boxs */
   printf("region layer is drawing box \n");
   region_layer_draw_boxes(&detect_rl, drawboxes);
   printf("region layer has drown box \n");
-  // time_count++;
-  // if (time_count % 100 == 0) {
-  //   time_now = sysctl_get_time_us();
-  //   printf("SPF:%fms\n", (time_now - time_last) / 1000.0 / 100);
-  //   time_last = time_now;
-  // }
 
+  /* draw boxs */
+  usleep(1000);
+  if (jpeg != NULL) {
+    printf("Width: %d, Height: %d, Comps: %d\r\n", jpeg->width, jpeg->height,
+           jpeg->comps);
+    char *p = NULL;
+    switch (jpeg->scan_type) {
+      case PJPG_GRAYSCALE:
+        p = "GRAYSCALE";
+        break;
+      case PJPG_YH1V1:
+        p = "H1V1";
+        break;
+      case PJPG_YH2V1:
+        p = "H2V1";
+        break;
+      case PJPG_YH1V2:
+        p = "H1V2";
+        break;
+      case PJPG_YH2V2:
+        p = "H2V2";
+        break;
+    }
+
+    printf("Scan type: %s\r\n", p);
+    jpeg_display(0, 0, jpeg);
+    usleep(1000);
+  }
+  for (uint32_t i = 0; i < 10; i++) {
+    /* code */ printf("jpeg_display:%d   \n", (*(jpeg->img_data + i)));
+  }
   return 0;
 }

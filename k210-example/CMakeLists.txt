@@ -216,10 +216,11 @@ include_directories(
 )
 ## [/section] Header
 ## [section] Source
-## add source from config json (19 files matched)
+## add source from config json (23 files matched)
 add_source_file(src/board_config.h)
 add_source_file(src/font.h)
 add_source_file(src/image.h)
+add_source_file(src/img.c)
 add_source_file(src/incbin.h)
 add_source_file(src/lcd.c)
 add_source_file(src/lcd.h)
@@ -231,10 +232,13 @@ add_source_file(src/ov2640.h)
 add_source_file(src/ov5640.c)
 add_source_file(src/ov5640.h)
 add_source_file(src/ov5640cfg.h)
-add_source_file(src/pic.h)
+add_source_file(src/picojpeg.c)
+add_source_file(src/picojpeg.h)
+add_source_file(src/picojpeg_util.c)
+add_source_file(src/picojpeg_util.h)
 add_source_file(src/region_layer.c)
-add_source_file(src/region_layer.h)
 add_source_file(src/w25qxx.c)
+add_source_file(src/region_layer.h)
 add_source_file(src/w25qxx.h)
 ## [/section] Source
 # [/section] Project

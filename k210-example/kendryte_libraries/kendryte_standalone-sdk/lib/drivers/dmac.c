@@ -74,7 +74,6 @@ static void dmac_enable(void)
     dmac_cfg.data = readq(&dmac->cfg);
     dmac_cfg.cfg.dmac_en = 1;
     dmac_cfg.cfg.int_en = 1;
-    // printf("dmac_cfg.data:%u\n", (uint32_t)dmac_cfg.data);
     writeq(dmac_cfg.data, &dmac->cfg);
 }
 
@@ -360,11 +359,10 @@ int dmac_set_channel_param(dmac_channel_number_t channel_num,
                            dmac_transfer_width_t dmac_trans_width,
                            uint32_t blockSize)
 {
-    // printf("func:dmac_set_channel_param\n");
     dmac_ch_ctl_u_t ctl;
     dmac_ch_cfg_u_t cfg_u;
 
-#if FIX_CACHE //对齐
+#if FIX_CACHE
     uint8_t *src_io = (uint8_t *)src;
     uint8_t *dest_io = (uint8_t *)dest;
     if(is_memory_cache((uintptr_t)src))
@@ -617,7 +615,7 @@ void dmac_init(void)
     /*reset dmac */
 
     intclear.data = readq(&dmac->com_intclear);
-    intclear.com_intclear.cear_slvif_dec_err_intstat = 1;
+    intclear.com_intclear.clear_slvif_dec_err_intstat = 1;
     intclear.com_intclear.clear_slvif_wr2ro_err_intstat = 1;
     intclear.com_intclear.clear_slvif_rd2wo_err_intstat = 1;
     intclear.com_intclear.clear_slvif_wronhold_err_intstat = 1;
@@ -770,7 +768,6 @@ void dmac_set_single_mode(dmac_channel_number_t channel_num,
                           dmac_transfer_width_t dmac_trans_width,
                           size_t block_size)
 {
-    // printf("func:dmac_set_single_mode\n");
     dmac_channel_interrupt_clear(channel_num);
     dmac_channel_disable(channel_num);
     dmac_wait_idle(channel_num);
