@@ -14,8 +14,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-// #define IOBUF_SIZE 4096
-#define IOBUF_SIZE 12288 //12K
+#define IOBUF_SIZE 4096
+//#define IOBUF_SIZE 12288 //12K
 
 /* copy_path - copy path name */
 static int
@@ -133,7 +133,7 @@ out:
     return ret;
 }
 
-int dev_kpuio_taskinit(void *buf, size_t len, int pid);
+int dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize);
 /* sysfile_write - write file */
 int sysfile_write(int fd, void *base, size_t len)
 {
@@ -148,46 +148,43 @@ int sysfile_write(int fd, void *base, size_t len)
         return -E_INVAL;
     }
     void *buffer;
-    void *buffer2;
     if ((buffer = kmalloc(IOBUF_SIZE)) == NULL)
     {
         return -E_NO_MEM;
     }
-    if ((buffer2 = kmalloc(IOBUF_SIZE)) == NULL)
-    {
-        return -E_NO_MEM;
-    }
+
     int ret = 0;
     size_t copied = 0, alen,dlen;
     kpu_buff *tmp = base;
+    bool first_block = true;
     while (len != 0)
     {
         if ((alen = IOBUF_SIZE) > len)
         {
             alen = len;
         }
-        if (ret == 0 && fd == 2)
-        {   
-            cprintf("offset %d\n", tmp->jpgoff);
-            char* test = (char*)base + tmp->jpgoff;
-            lock_mm(mm);
-            {
-                if (!copy_from_user(mm, buffer2, (char *)base + tmp->jpgoff, alen, 0))
-                {
-                    ret = -E_INVAL;
-                }
-            }
-            unlock_mm(mm);
-            if (ret == 0)
-            {
-                tmp->jpeg = (void *)buffer2;
-                cprintf("[sysfile_write]jpeg set ok %p\n", tmp->jpeg);
-            }
-            else
-            {
-                cprintf("[sysfile_write]copy buffer2 fial\n");
-            }
-        }
+        // if (ret == 0 && fd == 2)
+        // {   
+        //     cprintf("offset %d\n", tmp->jpgoff);
+        //     char* test = (char*)base + tmp->jpgoff;
+        //     lock_mm(mm);
+        //     {
+        //         if (!copy_from_user(mm, buffer2, (char *)base + tmp->jpgoff, alen, 0))
+        //         {
+        //             ret = -E_INVAL;
+        //         }
+        //     }
+        //     unlock_mm(mm);
+        //     if (ret == 0)
+        //     {
+        //         tmp->jpeg = (void *)buffer2;
+        //         cprintf("[sysfile_write]jpeg set ok %p\n", tmp->jpeg);
+        //     }
+        //     else
+        //     {
+        //         cprintf("[sysfile_write]copy buffer2 fial\n");
+        //     }
+        // }
         lock_mm(mm);
         {
             if (!copy_from_user(mm, buffer, base, alen, 0))
@@ -207,12 +204,17 @@ int sysfile_write(int fd, void *base, size_t len)
         }
         if (ret == 0 && fd == 2)
         {
-            dev_kpuio_taskinit(buffer, alen, current->pid);
+            cprintf("alen %d, len %d, buffer %p\n", alen, len, buffer);
+            int totlen = 0;
+            if(first_block) totlen = ((kpu_buff*)buffer)->totsize; 
+            dev_kpuio_taskinit(buffer, alen, current->pid, first_block, totlen);
+            first_block = false;
             if (alen != 0)
             {
                 assert(len >= alen);
                 base += alen, len -= alen, copied += alen;
             }
+            cprintf("after write alen %d, len %d\n", alen, len);
             //file_write(2, base, 1, 0);
             // return 0;
         }
@@ -223,8 +225,9 @@ int sysfile_write(int fd, void *base, size_t len)
     }
 
 out:
+    //如果fd=2 这个交由后面处理
+
     kfree(buffer);
-    kfree(buffer2);
     if (copied != 0)
     {
         return copied;

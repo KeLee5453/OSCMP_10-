@@ -74,7 +74,30 @@ static int alloc_id(){
 }
 // add new task to list
 // return taskid, if -1 failed
-int add_kpu_task(kpu_buff* buff, int callerpid){
+extern int totlength;
+extern void* bufs[64];
+extern int lens[64];
+extern int numblock;
+int add_kpu_task(int callerpid){
+    assert(totlength > 0);
+    kpu_buff* buff = kmalloc(totlength);
+    cprintf("buff's totsize is %d\n", totlength);
+    char* dst_ptr, *src_ptr;
+    dst_ptr = (char*)buff;
+    for(int i = 0; i < numblock; i++){
+        char* src_ptr = (char*)bufs[i];
+        cprintf("copying %d bytes from %p to %p\n", lens[i], src_ptr, dst_ptr);
+        for(int j = 0; j < lens[i]; j++){
+            *dst_ptr = *src_ptr;
+            dst_ptr++;
+            src_ptr++;
+        }
+        kfree(bufs[i]);
+        lens[i] = 0;
+    }
+    if(buff->totsize != totlength){
+        panic("tot_size doesn't matchd should be %d but %d\n", buff->totsize , totlength);
+    }
     _kpu_pool_task_t* newtask;
     cprintf("[add_kpu_task], buff addr:%p,current pid:%d\n", buff,current->pid);
     if(buff->jpgsize > 0){
@@ -88,9 +111,9 @@ int add_kpu_task(kpu_buff* buff, int callerpid){
             cprintf("[add_kpu_task]taskid: %d, totsize %d\n",newtask->id,
             newtask->input->totsize);
             cprintf("[add_kpu_task]check jpg: ");
-            for(int j = 0; j < newtask->input->jpgsize; j++){
-                cprintf("%d:%c ",j, newtask->input->jpeg[j]);
-            }
+            // for(int j = 0; j < newtask->input->jpgsize; j++){
+            //     cprintf("%d:%c ",j, newtask->input->jpeg[j]);
+            // }
             task_init(newtask); //set flag
             cprintf("\n");
             cprintf("[add_kpu_task]jpeg addr:%p, \n", newtask->input->jpeg);
@@ -98,6 +121,7 @@ int add_kpu_task(kpu_buff* buff, int callerpid){
         }
     }
     else{
+        warn("add fail 99\n");
         return 99;
     }
     return 100;

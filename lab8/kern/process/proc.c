@@ -1062,7 +1062,7 @@ kpu_task_ctrl(void *arg) {
                 int kputaskid = -2;        
                 cprintf("add task current pid %d ,base %p\n" ,current->pid, kputaskbase);
 
-                kputaskid = add_kpu_task(kputaskbase, caller_pid);
+                kputaskid = add_kpu_task(caller_pid);
                 if(kputaskid < 0){
                     warn("adding new task into pool fail, callerpid: %d; id %d\n", caller_pid, kputaskid);
                 }else{

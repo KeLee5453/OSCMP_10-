@@ -48,8 +48,13 @@ dev_kpuio_intr(void){
     return 0;
 }
 
+int totlength, sumlen;
+void* bufs[64];
+int lens[64];
+int numblock;
+
 int
-dev_kpuio_taskinit(void *buf, size_t len, int pid){
+dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize){
     int ret = 0;
     bool intr_flag;
     local_intr_save(intr_flag);
@@ -60,26 +65,45 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid){
         //     panic("kpuio: task num > 1 error\n");
         //     return -E_INVAL;
         // }
-
-        kputaskbase = (kpu_buff *)(buf);
-        caller_pid = pid;
-        cprintf("[dev_kpuio_taskinit]check jpg: ");
-        for (int i = 0; i < kputaskbase->jpgsize; i++)
-        {
-            buffer[i] = kputaskbase->jpeg[i];
-            cprintf("%d:%c ", i, buffer[i]);
+        if (first) {
+            numblock = 0;
+            totlength = totsize;
+            sumlen = 0;
+            if (totlength < 0) {
+                warn("[dev_kpuio_taskinit]totlen < 0 error\n");
+                return -1;
+            }
+            caller_pid = pid;
         }
-        cprintf("\n");
-        kputaskbase->jpeg = (char *)&buffer[0];
-        cprintf("[dev_kpuio_taskinit]load kputaskbase addr:%p, jpg addr:%p, totsize:%d\n", (void *)kputaskbase, kputaskbase->jpeg, kputaskbase->totsize);
+        
+        if (!first){
+            if (caller_pid != pid){
+                panic("[dev_kpuio_taskinit]被多个进程同时init污染了\n");
+                return -1;
+            }
+        }
+  
+        cprintf("totlength is %d ; buf is %p\n",totlength, buf);
+        //do the copy stuff
+        lens[numblock] = len;
+        bufs[numblock] = kmalloc(len);
+        for(int i = 0; i < len; i++){
+            ((char*)bufs[numblock])[i] = *((char*)buf + i);
+        }
+        numblock++;
+        sumlen += len;
+        //kputaskbase->jpeg = (char *)&buffer[0];
         //打印出来
     }
-    kpuio_init = true; kpuio_check = false;
 
-    run_kpu_task_add();
-
-    //reset mark
-    kpuio_init = kpuio_check = false;
+    if(sumlen >= totlength){
+        kpuio_init = true; kpuio_check = false;
+        cprintf("[dev_kpuio_taskinit]run_kpu_task_add\n");
+        run_kpu_task_add();
+        //reset mark
+        kpuio_init = kpuio_check = false;        
+    }
+    
     local_intr_restore(intr_flag);
     return ret;
 }
@@ -116,7 +140,8 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
         int ret;
         kpuio_init = true; kpuio_check = false;
         cprintf(" kpuio_io init %d, check %d current pid %d\n",kpuio_init,kpuio_check, current->pid);
-        ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
+        panic("cannot use \n");
+        //ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
         return ret;
     }else{
         kpuio_check = true; kpuio_init = false;

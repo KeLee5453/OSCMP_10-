@@ -35,7 +35,7 @@ typedef struct _kpu_buff
     uint64_t totsize;
     uint64_t jpgsize;
     int64_t jpgoff;
-    char *jpeg;
+    char jpeg[4096*10];
 }kpu_buff;
 void __noreturn exit(int error_code);
 int fork(void);

@@ -123,7 +123,7 @@ sys_write(uint64_t arg[])
     if (fd == 2)
     {
         uint64_t *tmp = (uint64_t *)arg[1];
-        kpu_buff *test = tmp;
+        kpu_buff *test = (kpu_buff*)arg[1];
         cprintf("[sys_write]current pid  %d\n", current->pid);
         cprintf("[sys_write]arg: size:%llu, addr %x\n", arg[2], tmp);
         cprintf("[sys_write]totsize:%d, jpgsize:%d, jpgoff:%d\n",

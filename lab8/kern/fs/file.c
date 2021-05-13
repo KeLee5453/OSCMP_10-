@@ -210,7 +210,6 @@ file_read(int fd, void *base, size_t len, size_t *copied_store) {
     int ret;
     struct file *file;
     *copied_store = 0;
-    if(fd == 2) cprintf("kern file_read fd = 2\n");
     if ((ret = fd2file(fd, &file)) != 0) {
         return ret;
     }

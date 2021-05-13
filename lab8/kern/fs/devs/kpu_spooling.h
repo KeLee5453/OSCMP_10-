@@ -36,7 +36,7 @@ typedef struct _kpu_pool_task{
 #define le2task(le, member)            \
 to_struct((le), _kpu_pool_task_t, member)
 
-int add_kpu_task(kpu_buff* buff, int callerpid);
+int add_kpu_task(int callerpid);
 int try_check_result(int pid);
 int try_run_task();
 
