@@ -5,14 +5,6 @@
 #include <dmac.h>
 #include <kmalloc.h>
 
-typedef struct _kpu_buff
-{
-    int64_t status;
-    uint64_t totsize;
-    uint64_t jpgsize;
-    int64_t jpgoff;
-    char jpeg[4096*10];
-}kpu_buff;
 
 typedef struct
 {

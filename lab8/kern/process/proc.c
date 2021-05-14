@@ -1063,12 +1063,14 @@ kpu_task_ctrl(void *arg) {
                 cprintf("add task current pid %d ,base %p\n" ,current->pid, kputaskbase);
 
                 kputaskid = add_kpu_task(caller_pid);
-                if(kputaskid < 0){
+                if(kputaskid < 0 || kputaskid >= 99){
                     warn("adding new task into pool fail, callerpid: %d; id %d\n", caller_pid, kputaskid);
                 }else{
                     cprintf("adding new task into pool %d\n", kputaskid);
                 }
-                try_run_task();
+                if (try_run_task(kputaskid) == -1){
+                    warn("try_run_task thread init fail\n");
+                }
                 struct proc_struct* proc = find_proc(caller_pid);
                 wakeup_proc(proc);
             } 

@@ -38,6 +38,6 @@ to_struct((le), _kpu_pool_task_t, member)
 
 int add_kpu_task(int callerpid);
 int try_check_result(int pid);
-int try_run_task();
+int try_run_task(int taskid);
 
 void kpu_spooling_init(void);
