@@ -19,12 +19,12 @@ static int run_kpu(_kpu_pool_task_t* task){
     run_task(task);
 
 
-    do_sleep(1000);
+    do_sleep(100);
 
 
     stop_task(task);
     task_success(task);
-    cprintf("return from run kpu, run success\n");
+    cprintf("[run_kputhread %d]return from run kpu, run success\n",current->pid);
 
     up(&kpu_sem);
 }
@@ -32,7 +32,7 @@ static int run_kpu(_kpu_pool_task_t* task){
 int add_runtest_thread(_kpu_pool_task_t* task){
     int pid = kernel_thread(run_kpu, (void*)task, 0);
     if(pid > 2) {
-        cprintf("created kpu thread pid %d\n", pid);
+        cprintf("[add_runtest_thread]created kpu thread pid %d\n", pid);
         return 0;
     }
     return -1;
@@ -94,7 +94,7 @@ int try_run_task(int taskid){
     if(runtask == NULL) return -1;
 
     //runtask
-    cprintf("deliver task from pid%d, jpeg %p, size %d to kpu\n " 
+    cprintf("[try_run_task]deliver task from pid%d, jpeg %p, size %d to kpu\n " 
             ,runtask->proc->pid, runtask->input->jpeg, runtask->input->jpgsize);
     add_runtest_thread(runtask);
     // 执行kpu_test(runtask);
@@ -114,12 +114,12 @@ extern int numblock;
 int add_kpu_task(int callerpid){
     assert(totlength > 0);
     kpu_buff* buff = kmalloc(totlength);
-    cprintf("buff's totsize is %d\n", totlength);
+    cprintf("[add_kpu_task]buff's totsize is %d\n", totlength);
     char* dst_ptr, *src_ptr;
     dst_ptr = (char*)buff;
     for(int i = 0; i < numblock; i++){
         char* src_ptr = (char*)bufs[i];
-        cprintf("copying %d bytes from %p to %p\n", lens[i], src_ptr, dst_ptr);
+        cprintf("[add_kpu_task]copying %d bytes from %p to %p\n", lens[i], src_ptr, dst_ptr);
         for(int j = 0; j < lens[i]; j++){
             *dst_ptr = *src_ptr;
             dst_ptr++;
@@ -129,7 +129,7 @@ int add_kpu_task(int callerpid){
         lens[i] = 0;
     }
     if(buff->totsize != totlength){
-        panic("tot_size doesn't matchd should be %d but %d\n", buff->totsize , totlength);
+        panic("[add_kpu_task]tot_size doesn't matchd should be %d but %d\n", buff->totsize , totlength);
     }
     buff->jpeg = (char*) buff + (offsetof(kpu_buff, jpeg) + sizeof(uintptr_t));
     _kpu_pool_task_t* newtask;
@@ -145,7 +145,7 @@ int add_kpu_task(int callerpid){
             cprintf("[add_kpu_task]taskid: %d, totsize %d\n",newtask->id,
             newtask->input->totsize);
             cprintf("[add_kpu_task]check jpg: ");
-            for(int j = 0; j < newtask->input->jpgsize; j++){
+            for(int j = 0; j < 10; j++){
                 cprintf("%d:%c ",j, newtask->input->jpeg[j]);
             }
             task_init(newtask); //set flag

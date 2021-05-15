@@ -1060,16 +1060,16 @@ kpu_task_ctrl(void *arg) {
             //add task
             if (caller_pid > 2){
                 int kputaskid = -2;        
-                cprintf("add task current pid %d ,base %p\n" ,current->pid, kputaskbase);
+                cprintf("[kpu_task_ctrl]add task current pid %d ,base %p\n" ,current->pid, kputaskbase);
 
                 kputaskid = add_kpu_task(caller_pid);
                 if(kputaskid < 0 || kputaskid >= 99){
-                    warn("adding new task into pool fail, callerpid: %d; id %d\n", caller_pid, kputaskid);
+                    warn("[kpu_task_ctrl]adding new task into pool fail, callerpid: %d; id %d\n", caller_pid, kputaskid);
                 }else{
-                    cprintf("adding new task into pool %d\n", kputaskid);
+                    cprintf("[kpu_task_ctrl]adding new task into pool %d\n", kputaskid);
                 }
                 if (try_run_task(kputaskid) == -1){
-                    warn("try_run_task thread init fail\n");
+                    warn("[kpu_task_ctrl]try_run_task thread init fail\n");
                 }
                 struct proc_struct* proc = find_proc(caller_pid);
                 wakeup_proc(proc);
@@ -1079,7 +1079,7 @@ kpu_task_ctrl(void *arg) {
              
         }
         else if(kpuio_check && !kpuio_init){
-            cprintf("check task current pid %d\n" ,current->pid);
+            cprintf("[kpu_task_ctrl]check task current pid %d\n" ,current->pid);
             current->state = PROC_SLEEPING;
             current->wait_state = WT_KPU;
 
@@ -1087,19 +1087,19 @@ kpu_task_ctrl(void *arg) {
             switch (status)
             {
             case RESULT_GOT:
-                cprintf("kern found pid%d's task success\n", caller_pid);
+                cprintf("[kpu_task_ctrl]kern found pid%d's task success\n", caller_pid);
                 break;
             case RESULT_NOTEXIST:
-                warn("kern found pid%d's task not exists", caller_pid);
+                warn("[kpu_task_ctrl]kern found pid%d's task not exists", caller_pid);
                 break;
             case RESULT_RUNNING:
-                cprintf("kern found pid%d's task running\n", caller_pid);
+                cprintf("[kpu_task_ctrl]kern found pid%d's task running\n", caller_pid);
                 break;     
             case RESULT_WAITING:    
-                cprintf("kern found pid%d's task waiting\n", caller_pid);
+                cprintf("[kpu_task_ctrl]kern found pid%d's task waiting\n", caller_pid);
                 break; 
             default:
-                panic("unexpected return %d from try_check_result\n", status);
+                panic("[kpu_task_ctrl]unexpected return %d from try_check_result\n", status);
             };
             kpuresultbase->status = status;
 
@@ -1108,7 +1108,7 @@ kpu_task_ctrl(void *arg) {
         }
         else{
             //default sleep 
-            cprintf("flags: init %d, check %d \n", kpuio_init, kpuio_check);
+            cprintf("[kpu_task_ctrl]flags: init %d, check %d \n", kpuio_init, kpuio_check);
             current->state = PROC_SLEEPING;
             current->wait_state = WT_KPU;
         }

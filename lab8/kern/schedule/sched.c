@@ -182,7 +182,7 @@ void run_kpu_task_add(void){
     local_intr_save(intr_flag);
     current->state = PROC_SLEEPING;
     current->wait_state = WT_KPU_INIT;
-    cprintf("wakeup proc 2\n");
+    cprintf("[run_kpu_task_add]wakeup proc 2\n");
     if (1){
         wakeup_proc(kpu_task_ctrl_proc);
     }
@@ -195,7 +195,7 @@ void run_kpu_task_check(void* buf, size_t len, int pid){
     local_intr_save(intr_flag);
     current->state = PROC_SLEEPING;
     current->wait_state = WT_KPU;
-    cprintf("wakeup proc 2\n");
+    cprintf("[run_kpu_task_check]wakeup proc 2\n");
     if (1){
         wakeup_proc(kpu_task_ctrl_proc);
     }
