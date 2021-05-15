@@ -21,7 +21,7 @@ static int run_kpu(_kpu_pool_task_t* task){
 
     do_sleep(100);
 
-
+    cprintf("[run_kputhread %d], set flag success & stop\n", current->pid);
     stop_task(task);
     task_success(task);
     cprintf("[run_kputhread %d]return from run kpu, run success\n",current->pid);
@@ -48,7 +48,7 @@ int try_check_result(int pid){
     //check if its running
     while (e != &kpu_tasklist){
         _kpu_pool_task_t* task = le2task(e, task_link);
-        if(!is_running(task) && is_success(task)){
+        if(!is_running(task) && is_success(task) && pid == task->proc->pid){
             return RESULT_GOT;
         }
         else if(is_running(task)) {
