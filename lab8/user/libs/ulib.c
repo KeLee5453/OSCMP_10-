@@ -62,6 +62,12 @@ int
 sleep(unsigned int time) {
     return sys_sleep(time);
 }
+
+void 
+kpu_run(char jpg_data[],uint32_t jpg_size)
+{
+    sys_kpu_run(jpg_data,jpg_size);
+}
 int
 __exec(const char *name, const char **argv) {
     int argc = 0;

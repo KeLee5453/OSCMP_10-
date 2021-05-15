@@ -10,9 +10,10 @@
  * increace the value of counter pointed by @cnt.
  * */
 static void
-cputch(int c, int *cnt) {
+cputch(int c, int *cnt)
+{
     sys_putc(c);
-    (*cnt) ++;
+    (*cnt)++;
 }
 
 /* *
@@ -24,10 +25,10 @@ cputch(int c, int *cnt) {
  * Call this function if you are already dealing with a va_list.
  * Or you probably want cprintf() instead.
  * */
-int
-vcprintf(const char *fmt, va_list ap) {
+int vcprintf(const char *fmt, va_list ap)
+{
     int cnt = 0;
-    vprintfmt((void*)cputch, NO_FD, &cnt, fmt, ap);
+    vprintfmt((void *)cputch, NO_FD, &cnt, fmt, ap);
     return cnt;
 }
 
@@ -37,8 +38,8 @@ vcprintf(const char *fmt, va_list ap) {
  * The return value is the number of characters which would be
  * written to stdout.
  * */
-int
-cprintf(const char *fmt, ...) {
+int cprintf(const char *fmt, ...)
+{
     va_list ap;
 
     va_start(ap, fmt);
@@ -52,35 +53,50 @@ cprintf(const char *fmt, ...) {
  * cputs- writes the string pointed by @str to stdout and
  * appends a newline character.
  * */
-int
-cputs(const char *str) {
+int cputs(const char *str)
+{
     int cnt = 0;
     char c;
-    while ((c = *str ++) != '\0') {
+    while ((c = *str++) != '\0')
+    {
         cputch(c, &cnt);
     }
     cputch('\n', &cnt);
     return cnt;
 }
 
-
 static void
-fputch(char c, int *cnt, int fd) {
+fputch(char c, int *cnt, int fd)
+{
     write(fd, &c, sizeof(char));
-    (*cnt) ++;
+    (*cnt)++;
 }
 
-int
-vfprintf(int fd, const char *fmt, va_list ap) {
+
+static void
+kpuputch(void *c, int *cnt, int fd)
+{
+    kpu_buff* buf = (kpu_buff*)c;
+    // if (buf->jpgsize != 5) return;
+    write(fd, c, buf->totsize);
+    (*cnt)++;
+}
+
+int vfprintf(int fd, const char *fmt, va_list ap)
+{
     int cnt = 0;
-    vprintfmt((void*)fputch, fd, &cnt, fmt, ap);
+    if (fd == 2)
+    {
+        kpuputch(va_arg(ap, void *), &cnt, 2);
+        return cnt;
+    }
+    vprintfmt((void *)fputch, fd, &cnt, fmt, ap);
     return cnt;
 }
 
-int
-fprintf(int fd, const char *fmt, ...) {
+int fprintf(int fd, const char *fmt, ...)
+{
     va_list ap;
-
     va_start(ap, fmt);
     int cnt = vfprintf(fd, fmt, ap);
     va_end(ap);

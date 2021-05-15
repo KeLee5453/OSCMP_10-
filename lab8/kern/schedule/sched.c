@@ -174,3 +174,31 @@ run_timer_list(void) {
     }
     local_intr_restore(intr_flag);
 }
+
+//called by 
+extern struct proc_struct *kpu_task_ctrl_proc;
+void run_kpu_task_add(void){
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    current->state = PROC_SLEEPING;
+    current->wait_state = WT_KPU_INIT;
+    cprintf("[run_kpu_task_add]wakeup proc 2\n");
+    if (1){
+        wakeup_proc(kpu_task_ctrl_proc);
+    }
+    local_intr_restore(intr_flag);
+    schedule();
+}
+
+void run_kpu_task_check(void* buf, size_t len, int pid){
+    bool intr_flag;
+    local_intr_save(intr_flag);
+    current->state = PROC_SLEEPING;
+    current->wait_state = WT_KPU;
+    cprintf("[run_kpu_task_check]wakeup proc 2\n");
+    if (1){
+        wakeup_proc(kpu_task_ctrl_proc);
+    }
+    local_intr_restore(intr_flag);
+    schedule();
+}

@@ -75,6 +75,9 @@ static list_entry_t hash_list[HASH_LIST_SIZE];
 struct proc_struct *idleproc = NULL;
 // init proc
 struct proc_struct *initproc = NULL;
+// kpu_task_ctrl proc
+struct proc_struct *kpu_task_ctrl_proc = NULL;
+
 // current proc
 struct proc_struct *current = NULL;
 
@@ -261,11 +264,13 @@ find_proc(int pid) {
         list_entry_t *list = hash_list + pid_hashfn(pid), *le = list;
         while ((le = list_next(le)) != list) {
             struct proc_struct *proc = le2proc(le, hash_link);
+            //cprintf("checking pid%d =? %d\n", proc->pid, pid);
             if (proc->pid == pid) {
                 return proc;
             }
         }
     }
+    cprintf("can't find pid%d\n", pid);
     return NULL;
 }
 
@@ -1037,6 +1042,82 @@ init_main(void *arg) {
     return 0;
 }
 
+#include <kpu_spooling.h>
+//kpu ctcl
+extern kpu_buff* kputaskbase, *kpuresultbase;
+extern int caller_pid;
+extern bool kpuio_init;
+extern bool kpuio_check;
+
+
+static int
+kpu_task_ctrl(void *arg) {
+    kpu_spooling_init();
+    while(1){
+        bool intr_flag;
+        local_intr_save(intr_flag);
+        if(kpuio_init && !kpuio_check){
+            //add task
+            if (caller_pid > 2){
+                int kputaskid = -2;        
+                cprintf("[kpu_task_ctrl]add task current pid %d ,base %p\n" ,current->pid, kputaskbase);
+
+                kputaskid = add_kpu_task(caller_pid);
+                if(kputaskid < 0 || kputaskid >= 99){
+                    warn("[kpu_task_ctrl]adding new task into pool fail, callerpid: %d; id %d\n", caller_pid, kputaskid);
+                }else{
+                    cprintf("[kpu_task_ctrl]adding new task into pool %d\n", kputaskid);
+                }
+                if (try_run_task(kputaskid) == -1){
+                    warn("[kpu_task_ctrl]try_run_task thread init fail\n");
+                }
+                struct proc_struct* proc = find_proc(caller_pid);
+                wakeup_proc(proc);
+            } 
+            current->state = PROC_SLEEPING;
+            current->wait_state = WT_KPU_INIT;
+             
+        }
+        else if(kpuio_check && !kpuio_init){
+            cprintf("[kpu_task_ctrl]check task current pid %d\n" ,current->pid);
+            current->state = PROC_SLEEPING;
+            current->wait_state = WT_KPU;
+
+            int status = try_check_result(caller_pid);
+            switch (status)
+            {
+            case RESULT_GOT:
+                cprintf("[kpu_task_ctrl]kern found pid%d's task success\n", caller_pid);
+                break;
+            case RESULT_NOTEXIST:
+                warn("[kpu_task_ctrl]kern found pid%d's task not exists", caller_pid);
+                break;
+            case RESULT_RUNNING:
+                cprintf("[kpu_task_ctrl]kern found pid%d's task running\n", caller_pid);
+                break;     
+            case RESULT_WAITING:    
+                cprintf("[kpu_task_ctrl]kern found pid%d's task waiting\n", caller_pid);
+                break; 
+            default:
+                panic("[kpu_task_ctrl]unexpected return %d from try_check_result\n", status);
+            };
+            kpuresultbase->status = status;
+
+            struct proc_struct* proc = find_proc(caller_pid);
+            wakeup_proc(proc);
+        }
+        else{
+            //default sleep 
+            cprintf("[kpu_task_ctrl]flags: init %d, check %d \n", kpuio_init, kpuio_check);
+            current->state = PROC_SLEEPING;
+            current->wait_state = WT_KPU;
+        }
+        local_intr_restore(intr_flag);
+        schedule();  
+    }
+}
+
+
 // proc_init - set up the first kernel thread idleproc "idle" by itself and 
 //           - create the second kernel thread init_main
 void
@@ -1072,13 +1153,22 @@ proc_init(void) {
     if (pid <= 0) {
         panic("create init_main failed.\n");
     }
+    int pid2 = kernel_thread(kpu_task_ctrl, NULL, 0);
+    if (pid <= 0) {
+        panic("create kpu_task_ctrl failed.\n");
+    }
 
     initproc = find_proc(pid);
     set_proc_name(initproc, "init");
+    kpu_task_ctrl_proc = find_proc(pid2);
+    set_proc_name(kpu_task_ctrl_proc, "kpu controller");
 
     assert(idleproc != NULL && idleproc->pid == 0);
     assert(initproc != NULL && initproc->pid == 1);
+    assert(kpu_task_ctrl_proc != NULL);
 }
+
+
 
 // cpu_idle - at the end of kern_init, the first kernel thread idleproc will do below works
 void

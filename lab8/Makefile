@@ -90,7 +90,6 @@ match = $(shell echo $(2) | $(AWK) '{for(i=1;i<=NF;i++){if(match("$(1)","^"$$(i)
 # include kernel/user
 
 INCLUDE	+= libs/
-
 CFLAGS	+= $(addprefix -I,$(INCLUDE))
 
 LIBDIR	+= libs
@@ -183,7 +182,8 @@ KINCLUDE	+= kern/debug/ \
 			   kern/fs/swap/ \
 			   kern/fs/vfs/ \
 			   kern/fs/devs/ \
-			   kern/fs/sfs/
+			   kern/fs/sfs/ \
+			   kern/kpu_test/
 
 
 KSRCDIR		+= kern/init \
@@ -200,7 +200,8 @@ KSRCDIR		+= kern/init \
 			   kern/fs/swap \
 			   kern/fs/vfs \
 			   kern/fs/devs \
-			   kern/fs/sfs
+			   kern/fs/sfs \
+			   kern/kpu_test
 
 KCFLAGS		+= $(addprefix -I,$(KINCLUDE))
 

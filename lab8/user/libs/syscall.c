@@ -86,6 +86,16 @@ sys_lab6_set_priority(uint64_t priority)
     syscall(SYS_lab6_set_priority, priority);
 }
 
+void 
+sys_kpu_run(char jpg_data[],uint32_t jpg_size)
+{
+    syscall(SYS_kpu_run,jpg_data,jpg_size);
+}
+
+int sys_kpu_settask(void* task_struct){
+    syscall(SYS_kpu_settask, task_struct);
+}
+
 int
 sys_sleep(int64_t time) {
     return syscall(SYS_sleep, time);
@@ -113,6 +123,7 @@ sys_close(int64_t fd) {
 
 int
 sys_read(int64_t fd, void *base, size_t len) {
+    //if (fd == 2) return 0;
     return syscall(SYS_read, fd, base, len);
 }
 

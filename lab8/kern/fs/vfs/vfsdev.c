@@ -163,6 +163,7 @@ vfs_do_add(const char *devname, struct inode *devnode, struct fs *fs, bool mount
         goto failed_cleanup_vdev;
     }
     vdev->devname = s_devname;
+    cprintf("vdev->devname = %s \n", s_devname);
     vdev->devnode = devnode;
     vdev->mountable = mountable;
     vdev->fs = fs;

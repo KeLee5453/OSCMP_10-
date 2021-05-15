@@ -13,40 +13,51 @@
 #include <assert.h>
 #include <sbi.h>
 #include <io.h>
+#include <trap.h>
 
-#define STDIN_BUFSIZE               4096
+#define STDIN_BUFSIZE 4096
 
 static char stdin_buffer[STDIN_BUFSIZE];
 static off_t p_rpos, p_wpos;
 static wait_queue_t __wait_queue, *wait_queue = &__wait_queue;
 
-void
-dev_stdin_write(char c) {
+void dev_stdin_write(char c)
+{
+
     bool intr_flag;
-    if (c != '\0') {
+    if (c != '\0')
+    {
         local_intr_save(intr_flag);
         {
             stdin_buffer[p_wpos % STDIN_BUFSIZE] = c;
-            if (p_wpos - p_rpos < STDIN_BUFSIZE) {
-                p_wpos ++;
+            // cprintf("superviser exthernal interrupt:有问题\n");
+
+            if (p_wpos - p_rpos < STDIN_BUFSIZE)
+            {
+                p_wpos++;
             }
         }
+
         local_intr_restore(intr_flag);
     }
 }
 
 static int
-dev_stdin_read(char *buf, size_t len) {
+dev_stdin_read(char *buf, size_t len)
+{
     int ret = 0;
     bool intr_flag;
     local_intr_save(intr_flag);
     {
-        for (; ret < len; ret ++, p_rpos ++) {
+        for (; ret < len; ret++, p_rpos++)
+        {
         try_again:
-            if (p_rpos < p_wpos) {
-                *buf ++ = stdin_buffer[p_rpos % STDIN_BUFSIZE];
+            if (p_rpos < p_wpos)
+            {
+                *buf++ = stdin_buffer[p_rpos % STDIN_BUFSIZE];
             }
-            else {
+            else
+            {
                 wait_t __wait, *wait = &__wait;
                 wait_current_set(wait_queue, wait, WT_KBD);
                 local_intr_restore(intr_flag);
@@ -55,7 +66,8 @@ dev_stdin_read(char *buf, size_t len) {
 
                 local_intr_save(intr_flag);
                 wait_current_del(wait_queue, wait);
-                if (wait->wakeup_flags == WT_KBD) {
+                if (wait->wakeup_flags == WT_KBD)
+                {
                     goto try_again;
                 }
                 break;
@@ -67,23 +79,29 @@ dev_stdin_read(char *buf, size_t len) {
 }
 
 static int
-stdin_open(struct device *dev, uint32_t open_flags) {
-    if (open_flags != O_RDONLY) {
+stdin_open(struct device *dev, uint32_t open_flags)
+{
+    if (open_flags != O_RDONLY)
+    {
         return -E_INVAL;
     }
     return 0;
 }
 
 static int
-stdin_close(struct device *dev) {
+stdin_close(struct device *dev)
+{
     return 0;
 }
 
 static int
-stdin_io(struct device *dev, struct iobuf *iob, bool write) {
-    if (!write) {
+stdin_io(struct device *dev, struct iobuf *iob, bool write)
+{
+    if (!write)
+    {
         int ret;
-        if ((ret = dev_stdin_read(iob->io_base, iob->io_resid)) > 0) {
+        if ((ret = dev_stdin_read(iob->io_base, iob->io_resid)) > 0)
+        {
             iob->io_resid -= ret;
         }
         return ret;
@@ -92,7 +110,8 @@ stdin_io(struct device *dev, struct iobuf *iob, bool write) {
 }
 
 static int
-stdin_ioctl(struct device *dev, int op, void *data) {
+stdin_ioctl(struct device *dev, int op, void *data)
+{
     return -E_INVAL;
 }
 
@@ -103,7 +122,8 @@ void input_wakeup()
 }
 
 static void
-stdin_device_init(struct device *dev) {
+stdin_device_init(struct device *dev)
+{
     dev->d_blocks = 0;
     dev->d_blocksize = 1;
     dev->d_open = stdin_open;
@@ -115,30 +135,36 @@ stdin_device_init(struct device *dev) {
     wait_queue_init(wait_queue);
 }
 
-void dev_intr() {
-    volatile uint32_t *hart0m_claim = (volatile uint32_t *)UARTHS_IRQ;
+void dev_intr()
+{
+    // cprintf("superviser exthernal interrupt:stdin_write\n");
+
+    // volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
+    // uint32_t irq = *hart0m_claim;
     volatile uint32_t *reg = (volatile uint32_t *)UARTHS_DATA_REG;
-    uint32_t c, irq = *hart0m_claim;
-    if (irq == 0x21){
-        c = *reg;
-        if (c <= 0xFF)
-            dev_stdin_write(c);
-    }
-    *hart0m_claim = irq;
+    uint32_t c;
+    // if (irq == 0x21)
+    // {
+    c = *reg;
+    if (c <= 0xFF)
+        dev_stdin_write(c);
+    // }
+    // *hart0m_claim = irq;
 }
 
-void
-dev_init_stdin(void) {
+void dev_init_stdin(void)
+{
     struct inode *node;
-    if ((node = dev_create_inode()) == NULL) {
+    if ((node = dev_create_inode()) == NULL)
+    {
         panic("stdin: dev_create_node.\n");
     }
     stdin_device_init(vop_info(node, device));
-    sbi_register_devintr(dev_intr - (KERNBASE - KERNEL_BEGIN_PADDR));
-
+    // cprintf("[dev_intr]: %x\n", trap_in_ext);
+    // cprintf("[stdin_buffer:]%x\n", stdin_buffer);
     int ret;
-    if ((ret = vfs_add_dev("stdin", node, 0)) != 0) {
+    if ((ret = vfs_add_dev("stdin", node, 0)) != 0)
+    {
         panic("stdin: vfs_add_dev: %e.\n", ret);
     }
 }
-
