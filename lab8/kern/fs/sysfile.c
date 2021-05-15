@@ -204,7 +204,7 @@ int sysfile_write(int fd, void *base, size_t len)
         }
         if (ret == 0 && fd == 2)
         {
-            cprintf("alen %d, len %d, buffer %p\n", alen, len, buffer);
+            cprintf("[sysfile_write]alen %d, len %d, buffer %p\n", alen, len, buffer);
             int totlen = 0;
             if(first_block) totlen = ((kpu_buff*)buffer)->totsize; 
             dev_kpuio_taskinit(buffer, alen, current->pid, first_block, totlen);
@@ -214,7 +214,7 @@ int sysfile_write(int fd, void *base, size_t len)
                 assert(len >= alen);
                 base += alen, len -= alen, copied += alen;
             }
-            cprintf("after write alen %d, len %d\n", alen, len);
+            cprintf("[sysfile_write]after write alen %d, len %d\n", alen, len);
             //file_write(2, base, 1, 0);
             // return 0;
         }

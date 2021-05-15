@@ -83,7 +83,7 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize){
             }
         }
   
-        cprintf("totlength is %d ; buf is %p\n",totlength, buf);
+        cprintf("[dev_kpuio_taskinit]totlength is %d ; buf is %p\n",totlength, buf);
         //do the copy stuff
         lens[numblock] = len;
         bufs[numblock] = kmalloc(len);
@@ -112,11 +112,11 @@ int
 dev_try_getresult(void* buf, size_t len, int pid){
     int ret = 0;
     caller_pid = pid;
-    cprintf("dev_try_getresult init %d, check %d \n",kpuio_init,kpuio_check);
+    cprintf("[dev_try_getresult] init %d, check %d \n",kpuio_init,kpuio_check);
     kpuresultbase = (kpu_buff*)kmalloc(4096);
     run_kpu_task_check(buf , len, pid);
     //reset mark
-    cprintf("dev_try_getresult got status %d\n", kpuresultbase->status);
+    cprintf("[dev_try_getresult] got status %d\n", kpuresultbase->status);
     {
         //copy to buf so that user can receive
         ((kpu_buff*)buf)->status = kpuresultbase->status;
@@ -145,9 +145,9 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
         return ret;
     }else{
         kpuio_check = true; kpuio_init = false;
-        cprintf("kpuio_read init %d, check %d iob->base %p\n",kpuio_init,kpuio_check, iob->io_base);
+        cprintf("[kpuio_read] init %d, check %d iob->base %p\n",kpuio_init,kpuio_check, iob->io_base);
         int ret = dev_try_getresult(iob->io_base, iob->io_resid, current->pid);
-        cprintf("got result %d\n", ((kpu_buff*)iob->io_base)->status);
+        cprintf("[kpuio_io]got result %d\n", ((kpu_buff*)iob->io_base)->status);
         return ret;
     }
     return -E_INVAL;

@@ -587,7 +587,7 @@ int main(void)
     buff2.totsize = buff2.jpgoff + sizeof(char) * sizeof(ttt2);
     printf("Hello world!!.\n");
     cprintf("buff.jpeg %x\n", buff.jpeg );
-    cprintf("buff.size %d\n", buff.jpgoff);
+    cprintf("buff.jpgoff %d\n", buff.jpgoff);
     cprintf("buff %p, jpeg. %p\n",&buff,  &ttt[0]);
 
     cprintf("hello pass.\n");
