@@ -15,7 +15,7 @@ static semaphore_t kpu_sem;
 static int run_kpu(_kpu_pool_task_t* task){
     down(&kpu_sem);
 
-    cprintf("[thread %d]start running task %d\n" ,current->pid, task->id);
+    cprintf("[thread %d]start running task %d %p\n" ,current->pid, task->id, task);
     run_task(task);
 
 
@@ -80,12 +80,12 @@ int try_run_task(int taskid){
     _kpu_pool_task_t* runtask = NULL;
     while (e != &kpu_tasklist){
         _kpu_pool_task_t* task = le2task(e, task_link);
-        if(is_running(task)) {
-            warn("trying to run a running task\n");
-            break;
-        }else{
-            if(task->id == taskid){
-                runtask = task;
+        if(task->id == taskid){
+            runtask = task;
+            if(is_running(task)) {
+                warn("trying to run a running task %p\n", task);
+                break;
+            }else{
                 break;
             }
         }
