@@ -19,7 +19,7 @@ static int run_kpu(_kpu_pool_task_t* task){
     run_task(task);
 
 
-    do_sleep(100);
+    do_sleep(1000);
 
     cprintf("[run_kputhread %d], set flag success & stop\n", current->pid);
     stop_task(task);
