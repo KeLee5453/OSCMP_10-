@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../kendryte_libraries/kendryte_standalone-sdk/lib/bsp/include/encoding.h
+
+../kendryte_libraries/kendryte_standalone-sdk/lib/bsp/include/platform.h
+
+../kendryte_libraries/kendryte_standalone-sdk/lib/drivers/include/plic.h
+stdint.h
+-
+encoding.h
+../kendryte_libraries/kendryte_standalone-sdk/lib/drivers/include/encoding.h
+platform.h
+../kendryte_libraries/kendryte_standalone-sdk/lib/drivers/include/platform.h
+
+/home/kelee/Desktop/k210-example/src/cnn.h
+stdint.h
+-
+plic.h
+-
+
+/home/kelee/Desktop/k210-example/src/gencode_output.c
+cnn.h
+/home/kelee/Desktop/k210-example/src/cnn.h
+

@@ -1,0 +1,18 @@
+{
+    "$schema": "vscode://schemas/flasher",
+    "downloadSections": [
+        {
+            "id": "1618907788501",
+            "filesize": 11485,
+            "name": "peaple",
+            "address": "0x81000000",
+            "autoAddress": false,
+            "filename": "src/peaple.jpeg",
+            "addressEnd": "0x81003000",
+            "swapBytes": true
+        }
+    ],
+    "baseAddress": "0x601000",
+    "totalSize": 11485,
+    "endAddress": "0x81003000"
+}
