@@ -1535,6 +1535,7 @@ extern "C"
    void dmac_intr(dmac_channel_number_t channel_num);
     void dmac_chanel_interrupt_clear(dmac_channel_number_t channel_num);
  void dmac_enable_channel_interrupt(dmac_channel_number_t channel_num);
+   void dmac_test_ch();
 
 #ifdef __cplusplus
 }

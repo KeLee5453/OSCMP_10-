@@ -48,11 +48,12 @@ int kern_init(void)
     proc_init(); // init process table
 
     plic_init();
-    plicinithart();
+    plicinithart();    
+    dmac_init();
+
     ide_init();  // init ide devices
     swap_init(); // init swap
     fs_init();
-    dmac_init();
 
     clock_init();  // init clock interrupt
     intr_enable(); // enable irq interrupt
@@ -62,6 +63,9 @@ int kern_init(void)
     //lab1_switch_test();
     // kpu_test(jpeg_data,sizeof(jpeg_data));
     kpu_init();
+
+    dmac_test_ch();
+
     cpu_idle(); // run idle process
 }
 

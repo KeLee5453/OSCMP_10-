@@ -120,7 +120,7 @@ pgfault_handler(struct trapframe *tf)
 
 static volatile int in_swap_tick_event = 0;
 extern struct mm_struct *check_mm_struct;
-
+void trap_in_mext();
 void interrupt_handler(struct trapframe *tf)
 {
     // int which_dev = 0;
@@ -128,21 +128,27 @@ void interrupt_handler(struct trapframe *tf)
     // {
     //     return;
     // }
-
     intptr_t cause = (tf->cause << 1) >> 1;
+    // if (cause != IRQ_S_TIMER){
+    //     print_trapframe(tf);
+    // }
     switch (cause)
     {
     case IRQ_U_SOFT:
         cprintf("User software interrupt\n");
         break;
     case IRQ_S_SOFT:
-        cprintf("Supervisor software interrupt\n");
+        //cprintf("Supervisor software interrupt\n");
+        //panic("IRQ_S_SOFT");
+        trap_in_mext();
+        //panic("finish trap_in_mext");
         break;
     case IRQ_H_SOFT:
         cprintf("Hypervisor software interrupt\n");
         break;
     case IRQ_M_SOFT:
         cprintf("Machine software interrupt\n");
+        panic("IRQ_M_SOFT\n");
         break;
     case IRQ_U_TIMER:
         cprintf("User software interrupt\n");
@@ -153,7 +159,15 @@ void interrupt_handler(struct trapframe *tf)
         // In fact, Call sbi_set_timer will clear STIP, or you can clear it
         // directly.
         // clear_csr(sip, SIP_STIP);
+        // 
+        // mie101000
+            //STIE = 1   ,MSIE = 1
+        // mip10100000
+            //STIP = 1  , MTIP = 1
+
         clock_set_next_event();
+        if(ticks % 100==0) 
+        cprintf("tick\n");
         ++ticks;
         run_timer_list();
         input_wakeup();
@@ -162,7 +176,7 @@ void interrupt_handler(struct trapframe *tf)
         cprintf("Hypervisor software interrupt\n");
         break;
     case IRQ_M_TIMER:
-        cprintf("Machine software interrupt\n");
+        panic("Machine software interrupt\n");
         break;
     case IRQ_U_EXT:
         cprintf("User software interrupt\n");
@@ -289,24 +303,31 @@ extern void dev_intr();
 extern int cnn_run_all_done(void *_task);
 extern int cnn_input_done(void *ctx);
 extern void ai_done(void *ctx);
-void trap_in_ext()
-
+extern int dmac_ch5_lock;
+void trap_in_mext()
 {
 
     volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
     uint32_t irq = *hart0m_claim;
+    if(irq != IRQN_UARTHS_INTERRUPT){
+        panic("not uart\n");
+    }
     switch (irq)
     {
 
     case IRQN_UARTHS_INTERRUPT:
-        // cprintf("[ext-trap]: %d", irq);
+        //cprintf("IRQN_UARTHS_INTERRUPT\n", irq);
         dev_intr();
+        sbi_set_mie();  //clear bits
         break;
     case IRQN_DMA0_INTERRUPT:
-        // cprintf("IRQN_DMA0_INTERRUPT");
+        cprintf("IRQN_DMA0_INTERRUPT");
         break;
-    case IRQN_AI_INTERRUPT:
     case IRQN_DMA5_INTERRUPT: //AI
+        cprintf("[trap_in_mext]IRQN_DMA5_INTERRUPT");
+        dmac_ch5_lock = 0;
+        panic("IRQN_DMA5_INTERRUPT");
+    case IRQN_AI_INTERRUPT:
         dmac_chanel_interrupt_clear(DMAC_CHANNEL5);
         // cprintf("[ext-trap]: %d", irq);
         switch (plic_callback_flag)
@@ -323,10 +344,12 @@ void trap_in_ext()
         case ai_done_flag:
             ai_done(plic_instance[irq].ctx);
         default:
+            panic("undefinedn");
             break;
         }
         break;
     default:
+        panic("undefinedn");
         break;
     }
     *hart0m_claim = irq;
@@ -380,5 +403,5 @@ void idt_init(void)
     /* Set the exception vector address */
     write_csr(stvec, &__alltraps);
     //设置外部中断跳转函数
-    sbi_register_devintr(trap_in_ext - (KERNBASE - KERNEL_BEGIN_PADDR));
+    sbi_register_devintr(trap_in_mext - (KERNBASE - KERNEL_BEGIN_PADDR));
 }

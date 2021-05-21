@@ -116,4 +116,9 @@ static inline void sbi_set_mie(void)
 	SBI_CALL_0(0x0A000005);
 }
 
+static inline void sbi_enable_mie2(void)
+{
+	SBI_CALL_0(0x0A000006);
+}
+
 #endif /* !__SBI_H__ */
