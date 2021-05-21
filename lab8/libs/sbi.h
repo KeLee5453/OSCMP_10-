@@ -121,4 +121,9 @@ static inline void sbi_enable_mie2(void)
 	SBI_CALL_0(0x0A000006);
 }
 
+static inline void sbi_iter_show(void)
+{
+	SBI_CALL_0(0x0A000007);
+}
+
 #endif /* !__SBI_H__ */
