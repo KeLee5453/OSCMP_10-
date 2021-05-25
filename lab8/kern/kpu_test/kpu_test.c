@@ -100,4 +100,5 @@ void kpu_test(_kpu_pool_task_t *runtask)
 
 int kpu_request(char jpeg_data, uint32_t jpeg_size)
 {
+    return 0;    
 }
