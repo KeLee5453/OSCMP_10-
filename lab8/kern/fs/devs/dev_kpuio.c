@@ -155,6 +155,17 @@ dev_try_getresult(void* buf, size_t len, int pid){
 // current proc
 extern struct proc_struct *current;
 void *lastbuf = NULL;
+
+/**
+ * kpuio_io - implement dev->d_io interface
+ * input / output a limited sized buf at the same time
+ * if write:
+ *  set kpuio_init = true
+ *  call  dev_kpuio_taskinit()
+ * if read:
+ *  set kpuio_check = true
+ *  call dev_try_getresult()
+ */
 static int
 kpuio_io(struct device *dev, struct iobuf *iob, bool write)
 {
@@ -193,6 +204,11 @@ kpuio_device_init(struct device *dev)
     dev->d_ioctl = kpuio_ioctl;
 }
 
+/**
+ * init inode for kpuio device
+ * add register a new device named " kpuio" in vfs; 
+ * init  kpuio_init & kpuio_check
+ */
 void dev_init_kpuio(void)
 {
     struct inode *node;
