@@ -31,6 +31,7 @@ void __noreturn __panic(const char *file, int line, const char *fmt, ...);
 
 typedef struct _kpu_buff
 {
+    char magic[8];
     int64_t status;
     uint64_t totsize;
     uint64_t jpgsize;

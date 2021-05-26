@@ -6,6 +6,7 @@ typedef int (*plic_irq_callback_t)(void *ctx);
 
 typedef struct _kpu_buff
 {
+    char magic[8];
     int64_t status;
     uint64_t totsize;
     uint64_t jpgsize;
