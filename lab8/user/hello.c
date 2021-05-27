@@ -1135,6 +1135,23 @@ kpu_buff buff, buff2;
 kpu_buff result,result2;
 int main(void)
 {
+    buff.magic[0] = 'k';
+    buff.magic[1] = 'p';
+    buff.magic[2] = 'u';
+    buff.magic[3] = 'm';
+    buff.magic[4] = 'a';
+    buff.magic[5] = 'g';
+    buff.magic[6] = 'i';
+    buff.magic[7] = 'c';
+
+    buff2.magic[0] = 'k';
+    buff2.magic[1] = 'p';
+    buff2.magic[2] = 'u';
+    buff2.magic[3] = 'm';
+    buff2.magic[4] = 'a';
+    buff2.magic[5] = 'g';
+    buff2.magic[6] = 'i';
+    buff2.magic[7] = 'c';
     for(int i = 0; i < sizeof(ttt); i++){
         buff.jpeg[i] = ttt[i];
     }

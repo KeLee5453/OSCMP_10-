@@ -52,22 +52,47 @@ int totlength, sumlen;
 void* bufs[64];
 int lens[64];
 int numblock;
+const char* magic = "kpumagic";
 
+/**
+ * check magic number of kpu_buff, it should appear in the first block
+ */
+bool check_magic(kpu_buff* buff){
+    if (buff == NULL)  return false;
+    for(int i = 0; i < 8; i++){
+        if (buff->magic[i] != magic[i]) return false;
+    }
+    return true;
+}
+
+/**
+ * dev_kpuio_taskinit - this function will receive a part of 
+ * kpu_buff at a time, called by file_read. 
+ * it has to store the parts of a same task and rebuild the
+ * whole kpu_buff. then init the task
+ * 
+ * it does such things:
+ * 1) check if buf is the first block using check_magic()
+ * 2) if is first block set init value for: numblock & totlength & sumlen & caller_pid
+ *    if not first , check if still in the same caller pid
+ * 3) copy len byte from buf to bufs[numblock]
+ * 4) numblock ++, calculate sumlen
+ * 5) if (sumlen == totlength)
+ *       *  set kpuio_check && kpuio_inti to tell kernel thread what to do
+ *       *  use run_kpu_task_add() to wake up the kernel controller thread
+ * 6) if sumlen > totlength throw warning
+ */
 int
-dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize){
+dev_kpuio_taskinit(void *buf, size_t len, int pid){
     int ret = 0;
     bool intr_flag;
     local_intr_save(intr_flag);
     {
-        //for(int i = 0; i < len; i++)
-        cprintf("[dev_kpuio_taskinit]current pid %d\n", current->pid);
-        // if(len != 1){
-        //     panic("kpuio: task num > 1 error\n");
-        //     return -E_INVAL;
-        // }
+        cprintf("[dev_kpuio_taskinit]current pid %d, len %d\n", current->pid, len);
+        bool first = check_magic((kpu_buff*)buf);
         if (first) {
             numblock = 0;
-            totlength = totsize;
+            totlength = ((kpu_buff*)buf)->totsize;
             sumlen = 0;
             if (totlength < 0) {
                 warn("[dev_kpuio_taskinit]totlen < 0 error\n");
@@ -75,15 +100,14 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize){
             }
             caller_pid = pid;
         }
-        
+
         if (!first){
             if (caller_pid != pid){
-                panic("[dev_kpuio_taskinit]被多个进程同时init污染了\n");
+                panic("[dev_kpuio_taskinit]> 1 process entered the critical, simultaneously\n");
                 return -1;
             }
         }
   
-        cprintf("[dev_kpuio_taskinit]totlength is %d ; buf is %p\n",totlength, buf);
         //do the copy stuff
         lens[numblock] = len;
         bufs[numblock] = kmalloc(len);
@@ -96,12 +120,14 @@ dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize){
         //打印出来
     }
 
-    if(sumlen >= totlength){
+    if(sumlen == totlength){
         kpuio_init = true; kpuio_check = false;
-        cprintf("[dev_kpuio_taskinit]run_kpu_task_add\n");
         run_kpu_task_add();
         //reset mark
         kpuio_init = kpuio_check = false;        
+    }
+    else if(sumlen > totlength){
+        warn("buf's sum larger than totlength, possible error\n");
     }
     
     local_intr_restore(intr_flag);
@@ -129,6 +155,17 @@ dev_try_getresult(void* buf, size_t len, int pid){
 // current proc
 extern struct proc_struct *current;
 void *lastbuf = NULL;
+
+/**
+ * kpuio_io - implement dev->d_io interface
+ * input / output a limited sized buf at the same time
+ * if write:
+ *  set kpuio_init = true
+ *  call  dev_kpuio_taskinit()
+ * if read:
+ *  set kpuio_check = true
+ *  call dev_try_getresult()
+ */
 static int
 kpuio_io(struct device *dev, struct iobuf *iob, bool write)
 {
@@ -139,15 +176,12 @@ kpuio_io(struct device *dev, struct iobuf *iob, bool write)
     {
         int ret;
         kpuio_init = true; kpuio_check = false;
-        cprintf(" kpuio_io init %d, check %d current pid %d\n",kpuio_init,kpuio_check, current->pid);
-        panic("cannot use \n");
-        //ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
+        ret = dev_kpuio_taskinit(iob->io_base, iob->io_resid, current->pid);
+        iobuf_skip(iob, iob->io_resid);
         return ret;
     }else{
         kpuio_check = true; kpuio_init = false;
-        cprintf("[kpuio_read] init %d, check %d iob->base %p\n",kpuio_init,kpuio_check, iob->io_base);
         int ret = dev_try_getresult(iob->io_base, iob->io_resid, current->pid);
-        cprintf("[kpuio_io]got result %d\n", ((kpu_buff*)iob->io_base)->status);
         return ret;
     }
     return -E_INVAL;
@@ -170,6 +204,11 @@ kpuio_device_init(struct device *dev)
     dev->d_ioctl = kpuio_ioctl;
 }
 
+/**
+ * init inode for kpuio device
+ * add register a new device named " kpuio" in vfs; 
+ * init  kpuio_init & kpuio_check
+ */
 void dev_init_kpuio(void)
 {
     struct inode *node;

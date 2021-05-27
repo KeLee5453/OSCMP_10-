@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <proc.h>
+#include <sync.h>
 #define MAX_TASKNUM 8
 
 #define RESULT_GOT (0)
@@ -41,3 +42,4 @@ int try_check_result(int pid);
 int try_run_task(int taskid);
 
 void kpu_spooling_init(void);
+int kpu_task_ctrl(void *arg);

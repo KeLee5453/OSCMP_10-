@@ -80,12 +80,7 @@ int sysfile_read(int fd, void *base, size_t len)
     {
         return -E_NO_MEM;
     }
-    // if(fd == 2){
-    //     cprintf("kpu sysfile_read\n");
-    // }
-    if(fd > 2){
-        cprintf("fd > 2\n");
-    }
+
     int ret = 0;
     size_t copied = 0, alen;
 
@@ -163,28 +158,6 @@ int sysfile_write(int fd, void *base, size_t len)
         {
             alen = len;
         }
-        // if (ret == 0 && fd == 2)
-        // {   
-        //     cprintf("offset %d\n", tmp->jpgoff);
-        //     char* test = (char*)base + tmp->jpgoff;
-        //     lock_mm(mm);
-        //     {
-        //         if (!copy_from_user(mm, buffer2, (char *)base + tmp->jpgoff, alen, 0))
-        //         {
-        //             ret = -E_INVAL;
-        //         }
-        //     }
-        //     unlock_mm(mm);
-        //     if (ret == 0)
-        //     {
-        //         tmp->jpeg = (void *)buffer2;
-        //         cprintf("[sysfile_write]jpeg set ok %p\n", tmp->jpeg);
-        //     }
-        //     else
-        //     {
-        //         cprintf("[sysfile_write]copy buffer2 fial\n");
-        //     }
-        // }
         lock_mm(mm);
         {
             if (!copy_from_user(mm, buffer, base, alen, 0))
@@ -207,15 +180,15 @@ int sysfile_write(int fd, void *base, size_t len)
             cprintf("[sysfile_write]alen %d, len %d, buffer %p\n", alen, len, buffer);
             int totlen = 0;
             if(first_block) totlen = ((kpu_buff*)buffer)->totsize; 
-            dev_kpuio_taskinit(buffer, alen, current->pid, first_block, totlen);
-            first_block = false;
+            //dev_kpuio_taskinit(buffer, alen, current->pid, first_block, totlen);
+            first_block = false;            
+            ret = file_write(2, buffer,alen, &alen);
             if (alen != 0)
             {
                 assert(len >= alen);
                 base += alen, len -= alen, copied += alen;
             }
             cprintf("[sysfile_write]after write alen %d, len %d\n", alen, len);
-            //file_write(2, base, 1, 0);
             // return 0;
         }
         if (ret != 0 || alen == 0)
