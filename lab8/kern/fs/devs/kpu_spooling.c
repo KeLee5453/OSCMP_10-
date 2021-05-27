@@ -23,13 +23,13 @@ static int run_kpu(_kpu_pool_task_t* task){
 
     cprintf("[thread %d]start running task %d %p\n" ,current->pid, task->id, task);
     run_task(task);
+    kpu_test(task);
 
     do_sleep(1000);
 
-    cprintf("[run_kputhread %d], set flag success & stop\n", current->pid);
     stop_task(task);
     task_success(task);
-    cprintf("[run_kputhread %d]return from run kpu, run success\n",current->pid);
+    cprintf("[thread %d]return from run kpu, run success\n",current->pid);
 
     up(&kpu_sem);
 }
