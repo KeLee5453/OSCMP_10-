@@ -62,8 +62,9 @@ int sysfile_close(int fd)
 {
     return file_close(fd);
 }
-#include <stdio.h>
-/* sysfile_read - read file */
+/**
+ * sysfile_read - read file
+ */
 int sysfile_read(int fd, void *base, size_t len)
 {
     struct mm_struct *mm = current->mm;
@@ -94,7 +95,6 @@ int sysfile_read(int fd, void *base, size_t len)
 
         //add this to avoid assert fail
         if(fd == 2)alen = len;
-        //cprintf("alen %d base->status %d\n",alen, ((kpu_buff*)buffer)->status);
 
         if (alen != 0)
         {
@@ -111,7 +111,6 @@ int sysfile_read(int fd, void *base, size_t len)
                 }
             }
             unlock_mm(mm);
-            //cprintf("copied %d bytes\n", alen);
         }
         if (ret != 0 || alen == 0)
         {
@@ -127,12 +126,17 @@ out:
     }
     return ret;
 }
+#include<stdio.h>
 #include<kpu.h>
-int dev_kpuio_taskinit(void *buf, size_t len, int pid, bool first, int totsize);
 /* sysfile_write - write file */
+/**
+ at fiest we implemented kpuprintf with a shortcut
+ (straight to kpu_spooling, copy a large mem in one time)
+ then we changed our implementation to a several-time write,
+ just like stdout
+ */
 int sysfile_write(int fd, void *base, size_t len)
 {
-    //cprintf("sysfile_write %p, %d\n", base, len);
     struct mm_struct *mm = current->mm;
     if (len == 0)
     {

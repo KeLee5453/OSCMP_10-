@@ -160,7 +160,7 @@ int add_kpu_task(int callerpid){
     _kpu_pool_task_t* newtask;
     cprintf("[add_kpu_task], buff addr:%p,current pid:%d\n", buff,current->pid);
     if(buff->jpgsize > 0){
-        newtask =  kmalloc(buff->totsize);
+        newtask =  kmalloc(sizeof(_kpu_pool_task_t));
         newtask->id = alloc_id();
         if(newtask->id >= 0){
             newtask->input = buff;
