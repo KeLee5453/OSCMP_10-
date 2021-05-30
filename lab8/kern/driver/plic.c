@@ -24,7 +24,7 @@
 
 
 int plic_callback_flag;
-void plic_init(void)
+void plic_init(void)//初始化PLIC
 {
     writel(1, PLIC_BASE_ADDR + IRQN_UARTHS_INTERRUPT * sizeof(uint32_t));
     writel(1, PLIC_BASE_ADDR + IRQN_DMA0_INTERRUPT * sizeof(uint32_t));
@@ -50,7 +50,7 @@ void plicinithart(void)
     *(uint32 *)PLIC_SENABLE(hart) = (1 << UART_IRQ) | (1 << DISK_IRQ);
     // set this hart's S-mode priority threshold to 0.
     *(uint32 *)PLIC_SPRIORITY(hart) = 0;
-#else
+#else//外部中断使能
     uint32_t *hart_m_enable = (uint32_t *)PLIC_MENABLE;
     cprintf("hart_m_enable  old:%x\n", readl(hart_m_enable));
     *(hart_m_enable) = readl(hart_m_enable) | (1 << IRQN_DMA0_INTERRUPT) | (1 << IRQN_AI_INTERRUPT);

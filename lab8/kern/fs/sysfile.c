@@ -127,7 +127,7 @@ out:
     return ret;
 }
 #include<stdio.h>
-#include<kpu.h>
+#include<cnn.h>
 /* sysfile_write - write file */
 /**
  at fiest we implemented kpuprintf with a shortcut

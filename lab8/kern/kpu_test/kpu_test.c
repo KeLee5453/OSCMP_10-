@@ -80,8 +80,10 @@ void kpu_test(_kpu_pool_task_t *runtask)
     /*---------------加载图片到ai_buf-----------------*/
     //存在访存问题
     cprintf("task addr : 0x%16x", task);
+    //初始化任务
     cnn_task_init(&task);
     cprintf("task_init succeed\n");
+    //进行卷积神经网络计算
     cnn_run(&task, 5, g_ai_buf, image_dst, ai_done_flag);
 
     // do_sleep(10);
@@ -91,7 +93,7 @@ void kpu_test(_kpu_pool_task_t *runtask)
     cprintf("cnn_run succeed\n");
 
     g_ai_done_flag = 0;
-
+    //进行预测
     region_layer_cal((uint8_t *)image_dst);
     region_layer_draw_boxes(print_class);
 

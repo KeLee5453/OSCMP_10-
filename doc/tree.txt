@@ -1,0 +1,237 @@
+.
+├── doc                         文档资料
+│   ├── img                         图片
+│   │   ├── kpu工作原理.png
+│   │   ├── PLICArch.jpg
+│   │   └── 执行流.jpg
+│   └── kpulab.md                   提交的文档
+├── lab8                        实验代码
+│   ├── CMakeLists.txt
+│   ├── giveitatry.pyq
+│   ├── kern                        内核代码
+│   │   ├── debug                       
+│   │   │   ├── assert.h
+│   │   │   ├── kdebug.c
+│   │   │   ├── kdebug.h
+│   │   │   ├── kmonitor.c
+│   │   │   ├── kmonitor.h
+│   │   │   ├── panic.c
+│   │   │   └── stab.h
+│   │   ├── driver                      驱动
+│   │   │   ├── clock.c                     时钟
+│   │   │   ├── clock.h
+│   │   │   ├── cnn.c                       KPU驱动
+│   │   │   ├── cnn.h                       
+│   │   │   ├── console.c                   串口驱动
+│   │   │   ├── console.h
+│   │   │   ├── dmac.c                      DMA驱动
+│   │   │   ├── dmac.h                      
+│   │   │   ├── fpioa.c                     开发板设置
+│   │   │   ├── fpioa.h
+│   │   │   ├── gpiohs.c                    开发版设置
+│   │   │   ├── gpiohs.h
+│   │   │   ├── ide.c
+│   │   │   ├── ide.h
+│   │   │   ├── intr.c              
+│   │   │   ├── intr.h
+│   │   │   ├── io.h                        IO地址设置
+│   │   │   ├── kbdreg.h
+│   │   │   ├── picirq.c
+│   │   │   ├── picirq.h
+│   │   │   ├── plic.c                      PLIC驱动
+│   │   │   ├── plic.h
+│   │   │   ├── ramdisk.c
+│   │   │   ├── ramdisk.h
+│   │   │   ├── sdcard.c                    SD卡驱动
+│   │   │   ├── sdcard.h
+│   │   │   ├── spi.c
+│   │   │   ├── spi.h
+│   │   │   ├── sysctl.c                    系统控制
+│   │   │   └── sysctl.h
+│   │   ├── fs                          文件系统
+│   │   │   ├── devs                        设备
+│   │   │   │   ├── dev.c                   
+│   │   │   │   ├── dev_disk0.c                 磁盘设备
+│   │   │   │   ├── dev.h
+│   │   │   │   ├── dev_kpuio.c                 KPU设备
+│   │   │   │   ├── dev_stdin.c                 输入输出设备
+│   │   │   │   ├── dev_stdout.c
+│   │   │   │   ├── kpu_spooling.c              KPU-spooling实现
+│   │   │   │   └── kpu_spooling.h
+│   │   │   ├── file.c
+│   │   │   ├── file.h
+│   │   │   ├── fs.c
+│   │   │   ├── fs.h
+│   │   │   ├── iobuf.c
+│   │   │   ├── iobuf.h
+│   │   │   ├── sfs
+│   │   │   │   ├── bitmap.c
+│   │   │   │   ├── bitmap.h
+│   │   │   │   ├── sfs.c
+│   │   │   │   ├── sfs_fs.c
+│   │   │   │   ├── sfs.h
+│   │   │   │   ├── sfs_inode.c
+│   │   │   │   ├── sfs_io.c
+│   │   │   │   └── sfs_lock.c
+│   │   │   ├── swap
+│   │   │   │   ├── swapfs.c
+│   │   │   │   └── swapfs.h
+│   │   │   ├── sysfile.c
+│   │   │   ├── sysfile.h
+│   │   │   └── vfs
+│   │   │       ├── inode.c
+│   │   │       ├── inode.h
+│   │   │       ├── vfs.c
+│   │   │       ├── vfsdev.c
+│   │   │       ├── vfsfile.c
+│   │   │       ├── vfs.h
+│   │   │       ├── vfslookup.c
+│   │   │       └── vfspath.c
+│   │   ├── init                        内核初始化
+│   │   │   ├── entry.S
+│   │   │   └── init.c
+│   │   ├── kpu_test                    KPU运行主体
+│   │   │   ├── incbin.h
+│   │   │   ├── kpu_test.c                   KPU执行封装
+│   │   │   ├── kpu_test.h          
+│   │   │   ├── picojpeg.c                   图片解码
+│   │   │   ├── picojpeg.h
+│   │   │   ├── picojpeg_util.c              图片解码
+│   │   │   ├── picojpeg_util.h
+│   │   │   ├── region_layer.c               预测
+│   │   │   ├── region_layer.h
+│   │   │   └── yolo.kmodel
+│   │   ├── libs                        库文件
+│   │   │   ├── gencode_output.c             KPU使用的模型参数
+│   │   │   ├── readline.c
+│   │   │   ├── stdio.c
+│   │   │   ├── string.c
+│   │   │   └── util.c
+│   │   ├── mm                          内存管理
+│   │   │   ├── default_pmm.c
+│   │   │   ├── default_pmm.h
+│   │   │   ├── kmalloc.c
+│   │   │   ├── kmalloc.h
+│   │   │   ├── memlayout.h
+│   │   │   ├── mmu.h
+│   │   │   ├── pmm.c
+│   │   │   ├── pmm.h
+│   │   │   ├── swap.c
+│   │   │   ├── swap_fifo.c
+│   │   │   ├── swap_fifo.h
+│   │   │   ├── swap.h
+│   │   │   ├── vmm.c
+│   │   │   └── vmm.h
+│   │   ├── process                     进程管理
+│   │   │   ├── entry.S
+│   │   │   ├── proc.c
+│   │   │   ├── proc.h
+│   │   │   └── switch.S
+│   │   ├── schedule                    进程调度
+│   │   │   ├── default_sched_c
+│   │   │   ├── default_sched.h
+│   │   │   ├── default_sched_stride.c
+│   │   │   ├── sched.c
+│   │   │   └── sched.h
+│   │   ├── sync                        同步互斥
+│   │   │   ├── check_sync.c
+│   │   │   ├── monitor.c
+│   │   │   ├── monitor.h
+│   │   │   ├── sem.c
+│   │   │   ├── sem.h
+│   │   │   ├── sync.h
+│   │   │   ├── wait.c
+│   │   │   └── wait.h
+│   │   ├── syscall                     系统调用
+│   │   │   ├── syscall.c
+│   │   │   └── syscall.h
+│   │   └── trap                        中断异常
+│   │       ├── trap.c
+│   │       ├── trapentry.S
+│   │       └── trap.h
+│   ├── lab5.md
+│   ├── libs                        库文件
+│   │   ├── atomic.h
+│   │   ├── defs.h
+│   │   ├── dirent.h
+│   │   ├── elf.h
+│   │   ├── error.h
+│   │   ├── float.h
+│   │   ├── hash.c
+│   │   ├── list.h
+│   │   ├── math.h
+│   │   ├── printfmt.c
+│   │   ├── qsort.c
+│   │   ├── rand.c
+│   │   ├── riscv.h
+│   │   ├── sbi.h
+│   │   ├── skew_heap.h
+│   │   ├── stat.h
+│   │   ├── stdarg.h
+│   │   ├── stdio.h
+│   │   ├── stdlib.h
+│   │   ├── string.c
+│   │   ├── string.h
+│   │   ├── unistd.h
+│   │   └── util.h
+│   ├── Makefile
+│   ├── tools
+│   │   ├── boot.ld
+│   │   ├── function.mk
+│   │   ├── gdbinit
+│   │   ├── grade.sh
+│   │   ├── kernel.ld
+│   │   ├── kflash.py
+│   │   ├── mksfs.c
+│   │   ├── rustsbi-k210
+│   │   ├── rustsbi-k210.bin
+│   │   ├── sign.c
+│   │   ├── user.ld
+│   │   └── vector.c
+│   └── user                        用户态程序
+│       ├── badarg.c
+│       ├── badsegment.c
+│       ├── divzero.c
+│       ├── exit.c
+│       ├── faultread.c
+│       ├── faultreadkernel.c
+│       ├── forktest.c
+│       ├── forktree.c
+│       ├── hello.c                 hello程序，内含KPU测试代码
+│       ├── kpurun.c
+│       ├── libs                    用户态库文件
+│       │   ├── dir.c
+│       │   ├── dir.h
+│       │   ├── file.c
+│       │   ├── file.h
+│       │   ├── initcode.S
+│       │   ├── lock.h
+│       │   ├── panic.c
+│       │   ├── stdio.c
+│       │   ├── syscall.c
+│       │   ├── syscall.h
+│       │   ├── ulib.c
+│       │   ├── ulib.h
+│       │   └── umain.c
+│       ├── matrix.c
+│       ├── pgdir.c
+│       ├── priority.c
+│       ├── sh.c
+│       ├── sleep.c
+│       ├── sleepkill.c
+│       ├── softint.c
+│       ├── spin.c
+│       ├── testbss.c
+│       ├── waitkill.c
+│       └── yield.c
+├── LICENSE
+├── py-example
+│   ├── dog.bmp
+│   └── img2c.py
+├── readme.md
+├── README.md
+├── sbi
+│   └── 0518
+│       └── rustsbi-k210.bin      rustsbi二进制文件
+
+27 directories, 209 files

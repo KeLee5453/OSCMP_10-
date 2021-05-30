@@ -292,10 +292,10 @@ extern void ai_done(void *ctx);
 void trap_in_ext()
 
 {
-
+    //读取中断请求寄存器获取中断号
     volatile uint32_t *hart0m_claim = (volatile uint32_t *)PLIC_MCLAIM;
     uint32_t irq = *hart0m_claim;
-    switch (irq)
+    switch (irq)//分发
     {
 
     case IRQN_UARTHS_INTERRUPT:
@@ -329,7 +329,7 @@ void trap_in_ext()
     default:
         break;
     }
-    *hart0m_claim = irq;
+    *hart0m_claim = irq;//回写中断完成寄存器
 
     return;
 }
